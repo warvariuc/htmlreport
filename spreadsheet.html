@@ -1,0 +1,194 @@
+<html>
+<head>
+  <title>Simple Spreadsheet</title>
+  <link media="all" href="styles.css" rel="stylesheet" type="text/css" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <script src="en.js" type="text/javascript"></script>
+  <script src="spreadsheet.js" type="text/javascript"></script>
+  <script src="json.js" type="text/javascript"></script>
+</head>
+<body onmouseover="showHeaderFooter(true);">
+<!--
+	Simple Spreadsheet is an open source Component created by Thomas Bley and licensed under GNU GPL v2.
+	Simple Spreadsheet is copyright 2006-2010 by Thomas Bley.
+	Translations implemented by Sophie Lee.
+	More information and documentation at http://www.simple-groupware.de/
+-->
+
+<div class="data" id="data"></div>
+<div id="source" align="center">
+<script>
+var out = "";
+out += trans("Simple Spreadsheet code / CSV data / Tab separated values (copy/paste from Excel):");
+document.write(out);
+</script>
+<br><textarea id="code" wrap="off">// visible cols, optional
+cols = 13;
+// visible rows, optional
+rows = 30;
+
+// Usage: [#col,#row,&quot;value&quot;,&quot;style&quot;],
+dbCells = [
+  // column headers
+  [1,-1,&quot;Col1&quot;,&quot;&quot;,&quot;Col1 long name&quot;], // B-ColTitle
+  [2,-1,&quot;Col2&quot;,&quot;color: blue; width:100px;&quot;,&quot;Col2 long name&quot;], // C-ColTitle
+  [3,-1,&quot;Col3&quot;,&quot;width:100px;&quot;], // D-ColTitle
+
+  // column group headers
+  [0,-2,&quot;Group1&quot;,&quot;color:red;colspan:2;&quot;],
+  [3,-2,&quot;Group2&quot;,&quot;colspan:2;&quot;],
+  [5,-2,&quot;Group3&quot;,&quot;colspan:3;&quot;],
+  [8,-2,&quot;Group4&quot;,&quot;colspan:2;&quot;],
+
+  // row headers
+  [-1,0,&quot;Group#1&quot;,&quot;color:blue;&quot;,&quot;Group#1 long name&quot;], // RowTitle 1
+  [-1,1,&quot;Row1&quot;,&quot;&quot;], // RowTitle 2
+  [-1,2,&quot;Row2&quot;,&quot;height:50px;&quot;], // RowTitle 3
+  [-1,3,&quot;Row3&quot;,&quot;&quot;], // RowTitle 4
+  [-1,4,&quot;Group#2&quot;,&quot;color:blue;&quot;,&quot;Group#2 long name&quot;], // RowTitle 5
+  [-1,5,&quot;Row1&quot;,&quot;&quot;], // RowTitle 6
+  [-1,6,&quot;Row2&quot;,&quot;&quot;], // RowTitle 7
+  [-1,7,&quot;Row3&quot;,&quot;&quot;], // RowTitle 8
+
+  [1,-1,&quot;Col1&quot;,&quot;&quot;,&quot;Col1 long name&quot;], // B-ColTitle
+  [2,-1,&quot;Col2&quot;,&quot;color: blue; width:100px;&quot;,&quot;Col2 long name&quot;], // C-ColTitle
+  [3,-1,&quot;Col3&quot;,&quot;width:100px;&quot;], // D-ColTitle
+
+  // cells
+
+  [0,0,&quot;=C3&quot;,&quot;font-weight:bold;&quot;], // A1
+  [2,2,&quot;test2&quot;,&quot;font-weight:bold;&quot;], // C3
+  [5,3,&quot;html:This is a &lt;b&gt;html&lt;/b&gt; text !&lt;hr&gt;&lt;ul&gt;&lt;li&gt;bullet 1&lt;/li&gt;&lt;li&gt;bullet 2&lt;/li&gt;&lt;li&gt;bullet 3&lt;/li&gt;&lt;/ul&gt;&quot;,&quot;&quot;], // F4
+  [5,5,&quot;This is a Multiline text !\\nline 2\\nline 3\\nend&quot;,&quot;&quot;], // F6
+  [1,2,&quot;rowspan&quot;,&quot;font-size:150%; rowspan:2;&quot;], // B3
+  [1,5,&quot;colspan&quot;,&quot;colspan:3;&quot;], // B6
+
+  [1,4,&quot;locked&quot;,&quot;readonly:true;height:50px;&quot;], // B5
+  [3,1,&quot;10&quot;,&quot;format:dollar;&quot;], // D2
+  [2,1,&quot;-2000000.999&quot;,&quot;width:100px; format:euro;&quot;], // C2
+  [1,1,&quot;0.44321&quot;,&quot;format:percent;&quot;], // B2
+
+  [5,0,&quot;=C3+&#039;C\&quot;3+C3&#039;&quot;,&quot;&quot;], // F1
+  [5,1,&quot;=C3+\&quot;C&#039;3-C3\&quot;&quot;,&quot;&quot;], // F2
+  [5,2,&quot;=&#039;C\&quot;3-C3&#039;+C3+\&quot;C&#039;3+C3\&quot;&quot;,&quot;&quot;], // F3
+  [6,0,&quot;=\&quot;C&#039;3+C3\&quot;+C3+&#039;C\&quot;3-C3&#039;&quot;,&quot;&quot;], // G1
+  [6,1,&quot;=&#039;&lt;t\&quot;e\\&#039;st&#039;+100+\&quot;te&#039;s\\\&quot;t&gt;\&quot;&quot;,&quot;color:blue;&quot;], // G2
+
+  [4,0,&quot;abc http://www.cnn.com test http://www.heise.de&quot;,&quot;&quot;], // E1
+  [4,1,&quot;http://www.cnn.com&quot;,&quot;font-weight:bold;&quot;], // E2
+  [4,2,&quot;firstname.lastname@invalid.local&quot;,&quot;font-weight:bold;&quot;], // E3
+
+  [0,6,&quot;02/26/2006&quot;,&quot;format:date;&quot;], // A7
+  [1,6,&quot;03/27/2007 9:11:12&quot;,&quot;format:datetime;&quot;], // B7
+  [2,6,&quot;14:11:12&quot;,&quot;format:time;&quot;], // C7
+  [3,6,&quot;1.2.2004&quot;,&quot;format:date;&quot;], // D7
+  [4,6,&quot;03/27/2007 9:11:12&quot;,&quot;format:datefulltime;&quot;], // E7
+  [5,6,&quot;02/26/2006&quot;,&quot;format:datefull;&quot;], // F7
+
+  [2,3,&quot;=customCalc(D4+D5)+customCalc2(D4+D5)&quot;,&quot;color:blue;&quot;], // C4
+  [2,4,&quot;=D2*D3&quot;,&quot;font-weight:bold;&quot;], // C5
+  [3,2,&quot;20&quot;,&quot;&quot;], // D3
+  [3,3,&quot;=D2+D3&quot;,&quot;font-weight:bold; text-decoration:underline;&quot;], // D4
+  [3,4,&quot;=sum(D2:D4)&quot;,&quot;color:blue;&quot;], // D5
+  [4,4,&quot;=E5&quot;,&quot;color:red; font-style:italic;&quot;], // E5
+
+// Usage: graph(type,title,data,keys)
+  [4,3,&quot;=graph(&#039;bar&#039;,E11,F12:F15,E12:E15,&#039;quarter&#039;,&#039;value&#039;)&quot;,&quot;&quot;], // E4
+  [4,5,&quot;=graph(&#039;pie&#039;,F11,F12:F15,E12:E15)&quot;,&quot;&quot;], // E6
+
+  [4,16,&quot;=graph(&#039;bar&#039;,E11,F12:F15,E12:E15,&#039;quarter&#039;,&#039;value&#039;)&quot;,&quot;&quot;], // E17
+  [4,18,&quot;=graph(&#039;line&#039;,G11,F12:F15,E12:E15,&#039;quarter&#039;,&#039;value&#039;)&quot;,&quot;&quot;], // E19
+
+  [4,19,&quot;=graph(&#039;linesteps&#039;,&#039;Linesteps graph&#039;,F12:F15,E12:E15,&#039;quarter&#039;,&#039;value&#039;)&quot;,&quot;&quot;], // E20
+  [4,20,&quot;=graph(&#039;scatter&#039;,&#039;Scatter graph&#039;,F12:F15,G12:G15)&quot;,&quot;&quot;], // E21
+
+  [5,16,&quot;=graph2(&#039;bar&#039;,&#039;Bar graph (2 bars)&#039;,F12:F15,G12:G15,E12:E15)&quot;,&quot;colspan:2;&quot;], // F17
+  [5,17,&quot;=graph2(&#039;baraccumulate&#039;,&#039;Baraccumulate graph&#039;,F12:F15,G12:G15,E12:E15)&quot;,&quot;colspan:2;&quot;], // F18
+  [5,18,&quot;=graph2(&#039;line&#039;,&#039;Line graph (2 lines)&#039;,F12:F15,G12:G15,E12:E15)&quot;,&quot;colspan:2;&quot;], // F19
+  [5,19,&quot;=graph2(&#039;linesteps&#039;,&#039;Linesteps graph (2 lines)&#039;,F12:F15,G12:G15,E12:E15)&quot;,&quot;colspan:2;&quot;], // F20
+
+  [4,10,&quot;Bar graph&quot;,&quot;&quot;], // F11
+  [5,10,&quot;Pie graph&quot;,&quot;&quot;], // G11
+  [6,10,&quot;Line graph&quot;,&quot;&quot;], // H11
+
+  [4,11,&quot;Q1&quot;,&quot;&quot;], // E12
+  [4,12,&quot;Q2&quot;,&quot;&quot;], // E13
+  [4,13,&quot;Q3&quot;,&quot;&quot;], // E14
+  [4,14,&quot;Q4&quot;,&quot;&quot;], // E15
+
+  [5,11,&quot;11&quot;,&quot;&quot;], // F12
+  [5,12,&quot;2&quot;,&quot;&quot;], // F13
+  [5,13,&quot;16&quot;,&quot;&quot;], // F14
+  [5,14,&quot;22&quot;,&quot;&quot;], // F15
+
+  [6,11,&quot;31&quot;,&quot;&quot;], // G12
+  [6,12,&quot;37&quot;,&quot;&quot;], // G13
+  [6,13,&quot;36&quot;,&quot;&quot;], // G14
+  [6,14,&quot;43&quot;,&quot;&quot;], // G15
+
+  [1,7,&quot;1&quot;,&quot;&quot;], // B8
+  [2,7,&quot;2&quot;,&quot;&quot;], // C8
+  [3,7,&quot;3&quot;,&quot;&quot;], // D8
+  [1,8,&quot;6&quot;,&quot;&quot;], // B9
+  [2,8,&quot;5&quot;,&quot;&quot;], // C9
+  [3,8,&quot;5&quot;,&quot;&quot;], // D9
+
+  [1,10,&quot;=\&quot;sum(B8:D8)\&quot;&quot;,&quot;&quot;], // B11
+  [2,10,&quot;=sum(B8:D8)&quot;,&quot;readonly:true;&quot;], // C11
+
+  [1,11,&quot;=\&quot;min(B8:D8)\&quot;&quot;,&quot;&quot;], // B12
+  [2,11,&quot;=min(B8:D8)&quot;,&quot;&quot;], // C12
+
+  [1,12,&quot;=\&quot;max(B8:D8)\&quot;&quot;,&quot;&quot;], // B13
+  [2,12,&quot;=max(B8:D8)&quot;,&quot;&quot;], // C13
+
+  [1,13,&quot;=\&quot;avg(B8:D8)\&quot;&quot;,&quot;&quot;], // B14
+  [2,13,&quot;=avg(B8:D8)&quot;,&quot;&quot;], // C14
+
+  [1,14,&quot;=\&quot;count(B8:D8)\&quot;&quot;,&quot;&quot;], // B15
+  [2,14,&quot;=count(B8:D8)&quot;,&quot;&quot;], // C15
+
+  [1,15,&quot;=\&quot;sum([B8,D8])\&quot;&quot;,&quot;&quot;], // B16
+  [2,15,&quot;=sum([B8,D8])&quot;,&quot;&quot;] // C16
+];
+// define a custom function to be used in the formulas, optional
+registerFuncs = [&quot;customCalc&quot;,&quot;customCalc2&quot;];
+
+function customCalc(num) {
+  return num*2.5;
+}
+
+function customCalc2(num) {
+  return num*3.0*showCell(1,1); // num * 2.5 * B2
+}
+
+/*
+dbCells = [
+  [0,0,&quot;1&quot;,&quot;&quot;],
+  [1,0,&quot;2&quot;,&quot;&quot;],
+  [2,0,&quot;31&quot;,&quot;&quot;],
+  [3,0,&quot;4&quot;,&quot;&quot;],
+
+  [0,1,&quot;5&quot;,&quot;&quot;],
+  [1,1,&quot;6&quot;,&quot;&quot;],
+  [2,1,&quot;7&quot;,&quot;&quot;],
+  [3,1,&quot;8&quot;,&quot;&quot;],
+
+  [2,2,&quot;a&quot;,&quot;&quot;,],
+
+  [2,3,&quot;A&quot;,&quot;&quot;,],
+
+  [2,4,&quot;b&quot;,&quot;&quot;,],
+
+  [2,5,&quot;B&quot;,&quot;&quot;,],
+];
+*/
+
+// forbid paging ? optional
+// allowPaging = false;</textarea><br>
+<script>
+load(getObj("code").value);
+</script>
+</div>
+</body>
+</html>
