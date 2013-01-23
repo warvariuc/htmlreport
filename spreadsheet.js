@@ -10,11 +10,10 @@ if (agent.indexOf("konqueror")!=-1) agent = "konqueror";
   else if (agent.indexOf("msie")!=-1) agent = "msie";
 
 window.onerror=handleErr;
-  
+
 if (agent=="msie" || agent=="safari") { // cursor keys only in keydown
   document.onkeydown = keypress;
 } else document.onkeypress=keypress;
-
 sys = new function() {
   this.initData = "";
   this.autoRecalc = true;
@@ -25,17 +24,17 @@ sys = new function() {
 
   this.currRow = 0;
   this.currCol = 0;
-  
+
   this.colMinWidth = "90px";
   this.showColumnGroups = false;
   this.allowPaging = true;
   this.isWriteable = true;
   this.isMouseDown = 0;
   this.isShiftDown = 0;
-  
+
   this.saveMethod = function(){ save("js"); };
   this.closeMethod = null;
-  
+
   this.multiRange = new Array();
   this.clipboard_row = 0;
   this.clipboard_col = 0;
@@ -43,11 +42,11 @@ sys = new function() {
   this.clipboard_mode = "";
   this.active = "";
 
-  this.tab = String.fromCharCode(9);  
+  this.tab = String.fromCharCode(9);
   this.marks = new Array();
   this.view = "values";
   this.strings = strings;
-  
+
   /* format: cells[row][column][type]
   type:
   0 = formula
@@ -116,7 +115,7 @@ function keypress(event) {
 	  sys.isShiftDown=0;
 	  sys.isMouseDown=0;
 	}
-	
+
 	if (!alt && !ctrl && keyCode!=0) {
 	  if (keyCode==33) { // page up
 		if (sys.currRow-10 <= sys.row0 && sys.currRow > 10) {
@@ -449,7 +448,7 @@ function showHeaderFooter(show) {
 
 function previewValue() {
   var value = getObj("value").value;
-  if (!getObj("value").disabled && 
+  if (!getObj("value").disabled &&
 	 (value.length>25 || value.indexOf("\\n")!=-1 || value.indexOf("html:")==0)) {
     getObj("multiline").style.display = "inline";
 	//getObj("content").style.overflow = "hidden"; // needed for invisible cursor
@@ -501,7 +500,7 @@ function manual() {
 
 function isWritable(style) {
   if (style.indexOf("readonly:true")==-1 && sys.isWriteable) return true;
-  return false; 
+  return false;
 }
 
 // convert e.g. B3 to (1,2)
@@ -988,7 +987,7 @@ function paste() {
 	if (sys.clipboard_mode=="cut") {
 	  for (var row=sRange[0]; row<=sRange[2]; row++) {
 	    for (var col=sRange[1]; col<=sRange[3]; col++) {
-		  if ((row < cRange[0] || row > cRange[2]) || 
+		  if ((row < cRange[0] || row > cRange[2]) ||
 		      (col < cRange[1] || col > cRange[3])) removeCell(row,col);
 	    }
 	  }
@@ -1002,7 +1001,7 @@ function paste() {
 	      copyCell(sys.clipboard_row,sys.clipboard_col,row,col);
 		}
 	  }
-      if (sys.clipboard_mode=="cut" && (sys.clipboard_row < cRange[0] || sys.clipboard_row > cRange[2] || 
+      if (sys.clipboard_mode=="cut" && (sys.clipboard_row < cRange[0] || sys.clipboard_row > cRange[2] ||
 		  sys.clipboard_col < cRange[1] || sys.clipboard_col > cRange[3])
 	  ) {
 	    removeCell(sys.clipboard_row,sys.clipboard_col);
@@ -1165,7 +1164,7 @@ function highlightCellHeader(row,col) {
   if (row<-1) sRow = -2;
   obj = resolveCell(sRow,col);
   if (obj) obj.className = "border_highlight";
-  if (row>=-1) {	
+  if (row>=-1) {
     obj = resolveCell(row,-1);
     if (obj) obj.className = "border_highlight";
   }
@@ -1259,12 +1258,12 @@ function editCell(row,col,keyCode) {
   sys.active = "content";
   if (!sys.isWriteable) return;
   if (!getObj("styling").disabled) cancelCell();
-  
+
   highlightCell(row,col,"cell_highlight");
   highlightCellHeader(row,col);
   sys.currRow = row;
   sys.currCol = col;
-  
+
   if (isWritable(getCellsR(row,col,1))) {
     getObj("value").disabled = false;
   }
@@ -1281,9 +1280,9 @@ function editCell(row,col,keyCode) {
     getObj("value").value = getCellsR(row,col,0);
   }
   if (!getObj("value").disabled) {
-    getObj("value").focus(); 
+    getObj("value").focus();
   } else {
-    getObj("styling").focus(); 
+    getObj("styling").focus();
   }
 }
 function copyCell(row,col,cRow,cCol) {
@@ -1547,7 +1546,7 @@ function formatNumber(val) {
   } else output += number;
   if (val-number != 0) {
     output += Math.abs(val-number).toFixed(2).replace("0.",".");
-  }   
+  }
   return sign+output;
 }
 function param(str) {
@@ -1600,7 +1599,7 @@ function graph(type,title,data,keys,xtitle,ytitle,width,height) {
     else if (type=="pie") type = "p3";
     else if (type=="bar") type = "bvg";
     else if (type=="scatter") type = "s";
-// Check: linesteps, 
+// Check: linesteps,
 
   var url = "img:http://chart.apis.google.com/chart?cht="+param(type)+"&chtt="+param(title);
   if (type!="s") {
