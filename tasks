@@ -14,3 +14,6 @@ research: absolute size in html for printing, page breaks
 http://stackoverflow.com/questions/320357/safe-width-in-pixel-for-printing-web-pages
 http://www.ekdahl.org/test_dpi/test2dpi.htm
 http://stackoverflow.com/questions/476815/can-you-access-sceen-displays-dpi-settings-in-a-javascript-function
+
+# Paged media
+http://www.w3.org/TR/CSS21/page.html
