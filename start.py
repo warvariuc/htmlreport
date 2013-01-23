@@ -35,9 +35,10 @@ class WebPage(QtWebKit.QWebPage):
 
 class WebView(QtWebKit.QWebView):
 
-    def __init__(self):
-        super().__init__()
-
+    def __init__(self, parent, web_page):
+        super().__init__(parent)
+        assert isinstance(web_page, QtWebKit.QWebPage)
+        self.setPage(web_page)
         self.settings().setAttribute(QtWebKit.QWebSettings.JavascriptEnabled, True)
 #        self.settings().setAttribute(QtWebKit.QWebSettings.JavascriptCanOpenWindows, True)
         self.linkClicked.connect(self.on_link_clicked)
@@ -74,14 +75,14 @@ class MainWindow(QtGui.QMainWindow, FormClass):
     def __init__(self):
         super().__init__()
 
-        # replace placeholder with our widget
-        self.web_view = WebView()
-
         # uic adds a function to our class called setupUi
         # calling this creates all the widgets from the .ui file
         self.setupUi(self)
 
-        self.web_view.setPage(WebPage(self, self.messages))
+        # replace placeholder with our widget
+        self.web_view = WebView(self, WebPage(self, self.messages))
+        self.placeholder.removeWidget(self._placeholder_label)
+        self.placeholder.addWidget(self.web_view)
 
 #    @QtCore.pyqtSlot(str)
 #    def on_textBrowser_highlighted(self, url):
