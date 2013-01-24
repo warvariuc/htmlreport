@@ -22,15 +22,13 @@ class WebPage(QtWebKit.QWebPage):
     """
     Makes it possible to use a Python logger to print javascript console messages
     """
-    def __init__(self, parent, console):
+    def __init__(self, parent, print_message_func):
         super().__init__(parent)
-        assert isinstance(console, QtGui.QPlainTextEdit)
-        self._console = console
+        self.print_message = print_message_func
 
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID):
         msg = "JsConsole(%s:%d): %s" % (sourceID, lineNumber, msg)
-        self._console.appendPlainText(msg)
-        self._console.ensureCursorVisible()  # scroll to the new message
+        self.print_message(msg)
 
 
 class WebView(QtWebKit.QWebView):
@@ -61,7 +59,6 @@ class WebView(QtWebKit.QWebView):
 
     def on_context_menu_requested(self, coord):
         menu = QtGui.QMenu()
-    #    menu.addAction('Clear', lambda: web_view.setHtml(''))
         menu.addAction('Print', self.on_print_requested)
         menu.exec_(QtGui.QCursor().pos())
 
@@ -80,29 +77,72 @@ class MainWindow(QtGui.QMainWindow, FormClass):
         self.setupUi(self)
 
         # replace placeholder with our widget
-        self.web_view = WebView(self, WebPage(self, self.messages))
-        self.placeholder.removeWidget(self._placeholder_label)
-        self.placeholder.addWidget(self.web_view)
+        self.web_view = WebView(self, WebPage(self, self.print_to_console))
+        self.placeholder_layout.takeAt(0)  # remove placeholder spacer
+        # and replace it with our widget
+        self.placeholder_layout.addWidget(self.web_view)
+
+        spreadsheet_menu = self.menuBar().addMenu('Spreadsheet')
+        addActionsToMenu(spreadsheet_menu, [
+            createAction(spreadsheet_menu, 'New', self.spreadsheet_new),
+            createAction(spreadsheet_menu, 'Print', self.spreadsheet_print)
+        ])
+
+    def print_to_console(self, msg):
+        self.messages.appendPlainText(msg)
+        self.messages.ensureCursorVisible()  # scroll to the new message
+
+    def spreadsheet_new(self):
+        self.print_to_console('New spreadsheet')
+        self.web_view.page().mainFrame().evaluateJavaScript("""
+if (confirm("Really close without saving changes ?"))
+    load(sys.initData);
+""")
+
+    def spreadsheet_print(self):
+        self.showInformation('Print', 'Print spreadsheet')
+
+    def showWarning(self, title, text):
+        """Convenience function to show a warning message box."""
+        QtGui.QMessageBox.warning(self, title, text)
+
+    def showInformation(self, title, text):
+        """Convenience function to show an information message box."""
+        QtGui.QMessageBox.information(self, title, text)
 
 #    @QtCore.pyqtSlot(str)
 #    def on_textBrowser_highlighted(self, url):
 #        # show link URL in the status bar when cursor is over it
 #        self.statusBar().showMessage(url)
-#
-#    def print_message(self, message, end='\n'):
-#        text_browser = self.textBrowser
-#        cursor = text_browser.textCursor()
-#        cursor.movePosition(QtGui.QTextCursor.End)
-#        text_browser.setTextCursor(cursor)
-#        if not message.startswith('<>'):
-#            message = html.escape(message + end).replace('\n', '<br>')
-#        else:
-#            if end == '\n':
-#                end = '<br>'
-#            message += end
-#        text_browser.insertHtml(message)
-#        text_browser.ensureCursorVisible()  # scroll to the new message
-#        QtGui.QApplication.processEvents()
+
+
+def createAction(parent, text, slot=None, shortcut=None, icon=None, tip=None, checkable=False,
+                 signal='triggered'):
+    """Convenience function to create QActions"""
+    action = QtGui.QAction(text, parent)
+    if icon:
+        action.setIcon(QtGui.QIcon(icon))
+    if shortcut:
+        action.setShortcut(shortcut)
+    if tip:
+        action.setToolTip(tip)
+        action.setStatusTip(tip)
+    if slot:
+        getattr(action, signal).connect(slot)
+    action.setCheckable(checkable)
+    return action
+
+
+def addActionsToMenu(menu, items):
+    """Add multiple actions/menus to a menu"""
+    assert hasattr(items, '__iter__'), '`Items` argument must an iterable'
+    for item in items:
+        if isinstance(item, QtGui.QAction):
+            menu.addAction(item)
+        elif isinstance(item, QtGui.QMenu):
+            menu.addMenu(item)
+        else:
+            menu.addSeparator()
 
 
 if __name__ == '__main__':

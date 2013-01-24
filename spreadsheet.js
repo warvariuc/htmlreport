@@ -1,25 +1,17 @@
 // GPL
 
-// Translations implemented by Sophie Lee.
-
-var agent = navigator.userAgent.toLowerCase();
-if (agent.indexOf("konqueror") != -1)
-	agent = "konqueror";
-else if (agent.indexOf("safari") != -1)
-	agent = "safari";
-else if (agent.indexOf("opera") != -1)
-	agent = "opera";
-else if (agent.indexOf("firefox") != -1)
-	agent = "firefox";
-else if (agent.indexOf("msie") != -1)
-	agent = "msie";
+function handleErr(msg, url, l) {
+    msg = "There was an error on this page.\n\nError: " + msg + "\n" + "Url: " + url + "\nLine: " + l;
+    // alert(msg);
+    console.debug(msg);
+    return true;
+}
 
 window.onerror = handleErr;
 
-if (agent == "msie" || agent == "safari") {// cursor keys only in keydown
-	document.onkeydown = keypress;
-} else
-	document.onkeypress = keypress;
+
+document.onkeydown = keypress; // cursor keys only in keydown
+
 sys = new function() {
 this.initData = "";
 this.autoRecalc = true;
@@ -318,12 +310,6 @@ function display() {
 	} else
 		out += "&nbsp; ";
 	if (sys.view == "values") {
-		if (sys.isWriteable && agent == "msie") {
-			out += "<a href='#' onclick='sys.autoRecalc=!sys.autoRecalc; display(); return false;' accesskey='m'>" + (sys.autoRecalc ? trans("Auto") + "-" + trans("Refresh") : trans("Manual")) + "</a>";
-			if (!sys.autoRecalc)
-				out += " <a href='#' onclick='display(); return false;' accesskey='r'>" + trans("Refresh") + "</a>";
-			out += " - ";
-		}
 		out += "<a href='#' onclick='sys.view=\"formulas\"; display(); return false;'>" + trans("Values") + "</a> - ";
 	} else if (sys.view == "formulas") {
 		out += "<a href='#' onclick='sys.view=\"styles\"; display(); return false;'>" + trans("Formulas") + "</a> - ";
@@ -339,8 +325,6 @@ function display() {
 	out += "<a href='#' onclick='alert(\"Simple Spreadsheet is an open source component created by Thomas Bley\\nand licensed under GNU GPL v2.\\n\\nSimple Spreadsheet is copyright 2006-2007 by Thomas Bley.\\nTranslations implemented by Sophie Lee.\\n\\nMore information and documentation at http://www.simple-groupware.de/\\n\"); return false;'>" + trans("About") + "</a>&nbsp;";
 	out += "</td></tr></table></div>";
 	var style = "";
-	if (agent == "msie")
-		style = "style='height:expression((document.body.clientHeight-40)+\"px\");'";
 	out += "<div id='content' " + style + "><table id='table' cellspacing='0'>";
 	out += "<tr>";
 	if (sys.showColumnGroups) {
@@ -1422,11 +1406,7 @@ function editCell(row, col, keyCode) {
 		getObj("rows").disabled = true;
 	getObj("field").disabled = true;
 	getObj("styling").value = getCellsR(row, col, 1);
-	if (keyCode > 32 && agent == "firefox" && !getObj("value").disabled) {
-		getObj("value").value = String.fromCharCode(keyCode);
-	} else {
-		getObj("value").value = getCellsR(row, col, 0);
-	}
+	getObj("value").value = getCellsR(row, col, 0);
 	if (!getObj("value").disabled) {
 		getObj("value").focus();
 	} else {
@@ -1624,11 +1604,6 @@ function check_html(code) {
 	if (tags.test(code) || attributes.test(code))
 		return htmlEscape(code, false);
 	return code;
-}
-
-function handleErr(msg, url, l) {
-	alert(trans("There was an error on this page.") + "\n\n" + trans("Error:") + " " + msg + "\n" + trans("Url") + ": " + url + "\n" + trans("Line:") + " " + l);
-	return true;
 }
 
 // convert 26 to AA, 0 to A
