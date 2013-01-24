@@ -374,7 +374,7 @@ function display() {
                     }
                     value = formatValue(value, style);
                     style = htmlEscape(formatStyle(style, value), false);
-                    out += "<td " + ( rowSpan ? "rowspan='" + rowSpan + "'" : "") + " " + ( colSpan ? "colspan='" + colSpan + "'" : "") + " id='" + row + "_" + col + "'><div style='" + style + "'>" + htmlEscape(value, true) + "</div></td>";
+                    out += "<td " + ( rowSpan ? "rowspan='" + rowSpan + "'" : "") + " " + ( colSpan ? "colspan='" + colSpan + "'" : "") + " id='" + row + "_" + col + "' class='cell'><div style='" + style + "'>" + htmlEscape(value, true) + "</div></td>";
                 }
             } else if (sys.view == "formulas") {
                 out += "<td id='" + row + "_" + col + "' onmouseover='buildStatus(" + row + "," + col + ");' onclick='mouseoverCell(" + row + "," + col + ");' onclick='mouseoverCell(" + row + "," + col + ");' ondblclick='editCell(" + row + "," + col + ",0);'>" + htmlEscape(getCells(row, col, 0), true) + "</td>";
@@ -583,48 +583,29 @@ function setCellsR(row, col, item, value) {
 }
 
 function load(code) {
-    var cols = sys.cols;
-    var rows = sys.rows;
-    var registerFuncs = "";
-    var dbCells = [];
-    if (code.indexOf("dbCells") == -1) {
-        if (code.indexOf(sys.tab) == -1)
-            sys.cells = loadCSV(code);
-        else
-            sys.cells = loadTSV(code);
-        if (!sys.cells)
-            return;
-    } else {
-        try {
-            eval(check_js(code));
-        } catch (err) {
-            alert(trans("Error loading data:") + " " + err);
-            return;
-        }
-        sys.cols = parseInt(cols);
-        sys.rows = parseInt(rows);
+    sys.cols = cols;
+    sys.rows = rows;
 
-        if (top.window == window && registerFuncs) {
-            sys.registerFuncs = registerFuncs;
-            for (var i = 0; i < sys.registerFuncs.length; i++) {
-                window[sys.registerFuncs[i]] = eval(check_js(sys.registerFuncs[i]));
-            }
+    if (top.window == window && registerFuncs) {
+        sys.registerFuncs = registerFuncs;
+        for (var i = 0; i < sys.registerFuncs.length; i++) {
+            window[sys.registerFuncs[i]] = eval(check_js(sys.registerFuncs[i]));
         }
-        // process 1 dimensional dbCells to 2 dimensional data
-        sys.cells = new Array();
-        try {
-            for (var i = 0; i < dbCells.length; i++) {
-                if (!dbCells[i])
-                    continue;
-                if (!sys.cells[dbCells[i][1]])
-                    sys.cells[dbCells[i][1]] = new Array();
-                // Row, Col, Value, Style, Tooltip, Evaluated Value
-                sys.cells[dbCells[i][1]][dbCells[i][0]] = new Array(dbCells[i][2], dbCells[i][3], dbCells[i][4], "");
-            }
-        } catch (err) {
-            alert(trans("Error parsing data:") + " " + err + " i=" + i + " cells=\"" + dbCells[i] + "\"");
-            return;
+    }
+    // process 1 dimensional dbCells to 2 dimensional data
+    sys.cells = new Array();
+    try {
+        for (var i = 0; i < dbCells.length; i++) {
+            if (!dbCells[i])
+                continue;
+            if (!sys.cells[dbCells[i][1]])
+                sys.cells[dbCells[i][1]] = new Array();
+            // Row, Col, Value, Style, Tooltip, Evaluated Value
+            sys.cells[dbCells[i][1]][dbCells[i][0]] = new Array(dbCells[i][2], dbCells[i][3], dbCells[i][4], "");
         }
+    } catch (err) {
+        alert(trans("Error parsing data:") + " " + err + " i=" + i + " cells=\"" + dbCells[i] + "\"");
+        return;
     }
     if ( typeof sys.cells[-2] != "undefined")
         sys.showColumnGroups = true;
