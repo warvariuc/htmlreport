@@ -159,54 +159,47 @@
             load();
 
             $(document).ready(function() {
-                // $("#table").click(function(){
-                // alert('as');
-                // });
                 $("#table").on("click", function(e) {
                     var td = $(e.target).closest("td");
-                    // clicked td
+                    if (!td.length)
+                        return
                     var indexes = td.attr('id').split('_');
-                    var row_no = indexes[0];
-                    var col_no = indexes[1];
-                    console.log(row_no, col_no, td.attr('id'));
-                    mouseoverCell(row_no, col_no);
+                    mouseoverCell(parseInt(indexes[0]), col_no = parseInt(indexes[1]));
                 });
 
                 $("#table").on("mousedown", function(e) {
                     var td = $(e.target).closest("td");
-                    // clicked td
+                    if (!td.length)
+                        return
                     var indexes = td.attr('id').split('_');
-                    var row_no = indexes[0];
-                    var col_no = indexes[1];
+                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
                     mousedown(row_no, col_no);
                 });
 
                 $("#table").on("mouseup", function(e) {
                     var td = $(e.target).closest("td");
-                    // clicked td
+                    if (!td.length)
+                        return
                     var indexes = td.attr('id').split('_');
-                    var row_no = indexes[0];
-                    var col_no = indexes[1];
+                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
                     mouseup();
                 });
 
                 $("#table").on("mouseover", function(e) {
                     var td = $(e.target).closest("td");
-                    // clicked td
                     if (!td.length)
                         return
                     var indexes = td.attr('id').split('_');
-                    var row_no = indexes[0], col_no = indexes[1];
+                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
                     buildStatus(row_no, col_no);
                 });
 
                 $("#table").on("dblclick", function(e) {
                     var td = $(e.target).closest("td");
-                    // clicked td
                     if (!td.length)
                         return
                     var indexes = td.attr('id').split('_');
-                    var row_no = indexes[0], col_no = indexes[1];
+                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
                     editCell(row_no, col_no, 0);
                 });
             });
