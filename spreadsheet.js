@@ -1167,13 +1167,13 @@ function highlightRange(multiRange, classname, att) {
 }
 
 function getMultiRange(multiRange) {
-    if (multiRange.length == 0)
-        return new Array();
-    var row1 = multiRange[0] > multiRange[2] ? multiRange[2] : multiRange[0];
-    var row2 = multiRange[0] > multiRange[2] ? multiRange[0] : multiRange[2];
-    var col1 = multiRange[1] > multiRange[3] ? multiRange[3] : multiRange[1];
-    var col2 = multiRange[1] > multiRange[3] ? multiRange[1] : multiRange[3];
-    return new Array(row1, col1, row2, col2);
+    if (!multiRange.length)
+        return [];
+    var row1 = Math.min(multiRange[0], multiRange[2]);
+    var col1 = Math.min(multiRange[1], multiRange[3]);
+    var row2 = Math.max(multiRange[0], multiRange[2]);
+    var col2 = Math.max(multiRange[1], multiRange[3]);
+    return [row1, col1, row2, col2];
 }
 
 function mousedown(row, col) {
