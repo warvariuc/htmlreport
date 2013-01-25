@@ -1140,7 +1140,7 @@ function buildStatus(row, col) {
         var rowTitleLong = getCellsR(row, -1, 2);
         status += ( rowTitleLong ? rowTitleLong : rowTitle) + " - ";
     }
-    getObj("status").innerHTML = htmlEscape(status + buildColName(col) + (row + 1), false);
+    $("#status").text(status + buildColName(col) + (row + 1));
 
     if (sys.isMouseDown) {
         markCell(row, col);
@@ -1158,10 +1158,12 @@ function highlightRange(multiRange, classname, att) {
     for (var row = cRange[0]; row <= cRange[2]; row++) {
         for (var col = cRange[1]; col <= cRange[3]; col++) {
             obj = resolveCell(row, col);
-            if (obj && classname)
-                obj.className = classname;
-            else if (!classname && obj)
-                obj.style.backgroundColor = att;
+            if (obj) {
+                if (classname)
+                    obj.className = classname;
+                else
+                    obj.style.backgroundColor = att;
+            }
         }
     }
 }
@@ -1176,21 +1178,23 @@ function getMultiRange(multiRange) {
     return [row1, col1, row2, col2];
 }
 
+function stub(e) { return false;}
+
 function mousedown(row, col) {
-    if (getObj("styling").disabled) {
-        document.onmousedown = new Function("return false;");
-        document.onselectstart = new Function("return false;");
+    if ($("#styling").is(":disabled")) {
+        $(document).on("mousedown", stub);
+        $(document).on("selectstart", stub);
         sys.isMouseDown = 1;
         highlightRange(sys.multiRange, "cell");
-        sys.multiRange = new Array(row, col, row, col);
+        sys.multiRange = [row, col, row, col];
         highlightRange(sys.multiRange, "cell_highlight_over");
     }
 }
 
 function mouseup() {
-    if (getObj("styling").disabled) {
-        document.onmousedown = "";
-        document.onselectstart = "";
+    if ($("#styling").is(":disabled")) {
+        $(document).off("mousedown", stub);
+        $(document).off("selectstart", stub);
         sys.isMouseDown = 0;
     }
 }
@@ -1427,8 +1431,8 @@ function disableEdit() {
         getObj("rows").disabled = false;
     getObj("field").disabled = false;
 
-    getObj("multiline").style.display = "none";
-    getObj("content").style.overflow = "auto";
+    $("#multiline").css("display", "none");
+    $("#content").css("overflow", "auto");
     // needed for invisible cursor
 }
 
@@ -1483,10 +1487,7 @@ function getSize(width) {
         myWidth = self.screen.width;
         myHeight = self.screen.height;
     }
-    if (width)
-        return myWidth;
-    else
-        return myHeight;
+    return (width ? myWidth : myHeight);
 }
 
 function return_height() {

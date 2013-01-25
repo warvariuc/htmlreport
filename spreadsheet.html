@@ -164,16 +164,17 @@
                     if (!td.length)
                         return
                     var indexes = td.attr('id').split('_');
-                    mouseoverCell(parseInt(indexes[0]), col_no = parseInt(indexes[1]));
+                    mouseoverCell(parseInt(indexes[0]), colNo = parseInt(indexes[1]));
                 });
 
                 $("#table").on("mousedown", function(e) {
+                    if (e.which != 1) return; // need left button
                     var td = $(e.target).closest("td");
                     if (!td.length)
                         return
                     var indexes = td.attr('id').split('_');
-                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
-                    mousedown(row_no, col_no);
+                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
+                    mousedown(rowNo, colNo);
                 });
 
                 $("#table").on("mouseup", function(e) {
@@ -181,7 +182,7 @@
                     if (!td.length)
                         return
                     var indexes = td.attr('id').split('_');
-                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
+                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
                     mouseup();
                 });
 
@@ -190,8 +191,8 @@
                     if (!td.length)
                         return
                     var indexes = td.attr('id').split('_');
-                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
-                    buildStatus(row_no, col_no);
+                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
+                    buildStatus(rowNo, colNo);
                 });
 
                 $("#table").on("dblclick", function(e) {
@@ -199,8 +200,8 @@
                     if (!td.length)
                         return
                     var indexes = td.attr('id').split('_');
-                    var row_no = parseInt(indexes[0]), col_no = parseInt(indexes[1]);
-                    editCell(row_no, col_no, 0);
+                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
+                    editCell(rowNo, colNo, 0);
                 });
             });
         </script>
