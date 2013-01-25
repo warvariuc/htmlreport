@@ -19,3 +19,32 @@ http://stackoverflow.com/questions/476815/can-you-access-sceen-displays-dpi-sett
 http://www.antennahouse.com/CSSInfo/CSS-Page-Tutorial-en.pdf
 http://www.w3.org/TR/CSS21/page.html
 http://www.w3.org/TR/css3-page/
+
+
+
+
+Extracting the index of the clicked cell and the index of the row it belongs too
+
+DOM gives you rowIndex as well as cellIndex, there is no need for the crazy jQuery index work.
+
+$('#frame td').click(function() {
+    $(this).toggleClass('selected');
+});
+
+$('#someform').submit(function() {
+    $('#cells').val(
+        $('#frame td.selected').map(function() {
+            return 'R'+this.parentNode.rowIndex+'C'+this.cellIndex;
+        }).get().join(', ')
+    );
+});
+assuming #cells is a hidden input you're using to pass the information.
+
+
+
+
+how can I get cell at specific index, for example index 2
+
+var table = document.getElementById("table");
+var row = table.rows[table.rows.length - 1];
+var cell = row.cells[2];

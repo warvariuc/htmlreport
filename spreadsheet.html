@@ -3,9 +3,8 @@
         <title>Simple Spreadsheet</title>
         <link media="all" href="styles.css" rel="stylesheet" type="text/css" />
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <script src="en.js"></script>
-        <script src="spreadsheet.js"></script>
         <script src="zepto.min.js"></script>
+        <script src="spreadsheet.js"></script>
     </head>
     <body>
 
@@ -154,56 +153,6 @@
             // forbid paging ? optional
             // allowPaging = false;
 
-            console.log('hello from JS!');
-
-            load();
-
-            $(document).ready(function() {
-                $("#table").on("click", function(e) {
-                    var td = $(e.target).closest("td");
-                    if (!td.length)
-                        return
-                    var indexes = td.attr('id').split('_');
-                    mouseoverCell(parseInt(indexes[0]), colNo = parseInt(indexes[1]));
-                });
-
-                $("#table").on("mousedown", function(e) {
-                    if (e.which != 1) return; // need left button
-                    var td = $(e.target).closest("td");
-                    if (!td.length)
-                        return
-                    var indexes = td.attr('id').split('_');
-                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
-                    mousedown(rowNo, colNo);
-                });
-
-                $("#table").on("mouseup", function(e) {
-                    var td = $(e.target).closest("td");
-                    if (!td.length)
-                        return
-                    var indexes = td.attr('id').split('_');
-                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
-                    mouseup();
-                });
-
-                $("#table").on("mouseover", function(e) {
-                    var td = $(e.target).closest("td");
-                    if (!td.length)
-                        return
-                    var indexes = td.attr('id').split('_');
-                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
-                    buildStatus(rowNo, colNo);
-                });
-
-                $("#table").on("dblclick", function(e) {
-                    var td = $(e.target).closest("td");
-                    if (!td.length)
-                        return
-                    var indexes = td.attr('id').split('_');
-                    var rowNo = parseInt(indexes[0]), colNo = parseInt(indexes[1]);
-                    editCell(rowNo, colNo, 0);
-                });
-            });
         </script>
     </body>
 </html>
