@@ -17,7 +17,9 @@ body, input, textarea, div, table {
 	padding: 0px;
 }
 
-.table {
+#table {
+	border-collapse: collapse;
+	border-spacing: 0;   /* cellspacing="0"*/
 	border-left: 1px solid #666666;
 	border-top: 1px solid #666666;
 }

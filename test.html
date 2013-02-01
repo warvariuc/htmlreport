@@ -1,0 +1,26 @@
+<html>
+	<head>
+		<script type="text/javascript">
+			function setColSpan() {
+				document.getElementById('myTable').rows[0].cells[0].colSpan = 2
+			}
+		</script>
+	</head>
+
+	<body>
+		<table id="myTable" border="1">
+			<tr>
+				<td>cell 1</td>
+				<td>cell 2</td>
+			</tr>
+			<tr>
+				<td>cell 3</td>
+				<td>cell 4</td>
+			</tr>
+		</table>
+		<form>
+			<input type="button" onclick="setColSpan()" value="Change colspan">
+		</form>
+	</body>
+
+</html>

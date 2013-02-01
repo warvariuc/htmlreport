@@ -3,13 +3,12 @@ function stub(e) {
 }
 
 sys = {
-	'r1': null,
-	'c1': null,
-	'r2': null,
-	'rc': null,
-	'isMouseDown': null,
+	r1 : null,
+	c1 : null,
+	r2 : null,
+	rc : null,
+	isMouseDown : null,
 };
-
 
 $(document).ready(function() {
 	// cursor keys only in keydown
@@ -17,33 +16,33 @@ $(document).ready(function() {
 	// disable selection on the page
 	$(document).on("selectstart", stub);
 
-	// $(document).on("click", "#table >tbody >tr >td", function(event) {
-		// $(this).toggleClass('cell_highlight_over');
-		// console.debug('Mouse click: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
+	// $(document).on("click", "#table >tbody >tr >td", function(e) {
+	// $(this).toggleClass('cell_highlight_over');
+	// console.debug('Mouse click: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
 	// });
 	for (var i = 0; i < 10; i++)
 		addColumns();
 	addRows(10);
 
-	$(document).on("mousedown", "#table >tbody >tr >td", function(event) {
-		if (event.which != 1)
+	$(document).on("mousedown", "#table >tbody >tr >td", function(e) {
+		if (e.which != 1)
 			// need left button
 			return;
 		sys.isMouseDown = true;
 		sys.r1 = this.parentNode.rowIndex - 2;
 		sys.c1 = this.cellIndex - 2;
-		console.debug('Mouse down: R' + sys.r1 + 'C' + sys.c1);
+		// console.debug('Mouse down: R' + sys.r1 + 'C' + sys.c1);
 		onmouseover(sys.r1, sys.c1);
-		// $(document).on("mousedown", stub);
+		$(document).on("mousedown", stub);
 		// $(document).on("selectstart", stub);
 	});
 
-	$(document).on("mouseup", "#table >tbody >tr >td", function(event) {
-		if (event.which != 1)
+	$(document).on("mouseup", "#table >tbody >tr >td", function(e) {
+		if (e.which != 1)
 			// need left button
 			return;
-		console.debug('Mouse up: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
-		// $(document).off("mousedown", stub);
+		// console.debug('Mouse up: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
+		$(document).off("mousedown", stub);
 		// $(document).off("selectstart", stub);
 		sys.isMouseDown = false;
 	});
@@ -53,14 +52,14 @@ $(document).ready(function() {
 			return;
 		var r1 = sys.r1;
 		var c1 = sys.c1;
-		console.debug('Mouse over: R' + r2 + 'C' + c2);
+		// console.debug('Mouse over: R' + r2 + 'C' + c2);
 		if (r2 === sys.r2 && c2 === sys.c2)
-		    // already highlighted
-		    return;
+			// already highlighted
+			return;
 		$("#table >tbody >tr >td").removeClass('cell_selected');
 		sys.r2 = r2;
 		sys.c2 = c2;
-		
+
 		var _r1 = Math.min(r1, r2);
 		var _r2 = Math.max(r1, r2, 0);
 		var _c1 = Math.min(c1, c2);
@@ -70,13 +69,34 @@ $(document).ready(function() {
 				cell = $('#table')[0].rows[r + 2].cells[c + 2];
 				$(cell).addClass('cell_selected');
 			}
-		}		
+		}
 	}
-	
-	$(document).on("mouseover", "#table >tbody >tr >td", function(event) {
+
+
+	$(document).on("mouseover", "#table >tbody >tr >td", function(e) {
 		var r2 = this.parentNode.rowIndex - 2;
 		var c2 = this.cellIndex - 2;
 		onmouseover(r2, c2);
+	});
+
+	$(function() {
+		$.contextMenu({
+			selector : '#table',
+			callback : function(key, options) {
+				var m = "clicked: " + key;
+				console.debug(m);
+			},
+			items : {
+				"merge_cells" : {
+					name : "Merge selected cells",
+					callback : function(e) {
+						var x = document.getElementById('table').rows[sys.r1 + 2].cells;
+						x[sys.c1 + 2].colSpan = "2";
+						console.debug('merge');
+					}
+				},
+			}
+		});
 	});
 
 });
