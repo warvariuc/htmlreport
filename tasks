@@ -48,3 +48,26 @@ how can I get cell at specific index, for example index 2
 var table = document.getElementById("table");
 var row = table.rows[table.rows.length - 1];
 var cell = row.cells[2];
+
+
+http://stackoverflow.com/questions/4498122/how-to-save-dynamicly-changed-byjquery-html-dom
+
+Solution using jquery follows:
+
+Step 1:
+
+convert the whole (modified) html to a string representation:
+
+var html = $('html').clone();
+var htmlString = html.html();
+Step 2:
+
+Base64 encode the htmlString and put it into a datauri inside a hyperlink:
+
+var datauri = "data:text/html;charset=utf-8;base64," + $base64.encode(htmlString);
+$("body").append("<a href='" + datauri + "'>Save</a>");
+Note: I'm using this library for base64 encoding above: http://hpyer.cn/codes/jquery-plugin-base64-encode-and-decode
+
+Step 3:
+
+Right-click on the 'Save' link dynamically created above and choose "Save As" from the browser's context menu. Your modified html file will be saved as a new html document on your local filesystem.
