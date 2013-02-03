@@ -32,7 +32,7 @@ $(document).ready(function() {
 		sys.r1 = this.parentNode.rowIndex - 2;
 		sys.c1 = this.cellIndex - 2;
 		// console.debug('Mouse down: R' + sys.r1 + 'C' + sys.c1);
-		onmouseover(sys.r1, sys.c1);
+		on_mouse_over_cell(sys.r1, sys.c1);
 		$(document).on("mousedown", stub);
 		// $(document).on("selectstart", stub);
 	});
@@ -41,58 +41,90 @@ $(document).ready(function() {
 		if (e.which != 1)
 			// need left button
 			return;
-		// console.debug('Mouse up: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
+		console.debug('Mouse up: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
 		$(document).off("mousedown", stub);
 		// $(document).off("selectstart", stub);
 		sys.isMouseDown = false;
+		var _ = normalize_selection(sys.r1, sys.c1, sys.r2, sys.c2);
+		sys.r1 = _[0];
+		sys.c1 = _[1];
+		sys.r2 = _[2];
+		sys.c2 = _[3];		
 	});
 
-	function onmouseover(r2, c2) {
+	function on_mouse_over_cell(r2, c2) {
 		if (!sys.isMouseDown)
 			return;
-		var r1 = sys.r1;
-		var c1 = sys.c1;
 		// console.debug('Mouse over: R' + r2 + 'C' + c2);
 		if (r2 === sys.r2 && c2 === sys.c2)
 			// already highlighted
 			return;
-		$("#table >tbody >tr >td").removeClass('cell_selected');
 		sys.r2 = r2;
 		sys.c2 = c2;
 
-		var _r1 = Math.min(r1, r2);
-		var _r2 = Math.max(r1, r2, 0);
-		var _c1 = Math.min(c1, c2);
-		var _c2 = Math.max(c1, c2, 0);
-		for (var r = _r1; r <= _r2; r++) {
-			for (var c = _c1; c <= _c2; c++) {
+		$("#table >tbody >tr >td").removeClass('cell_selected');
+		var _ = normalize_selection(sys.r1, sys.c1, sys.r2, sys.c2);
+		select_cells(_[0], _[1], _[2], _[3]);
+	}
+	
+	function normalize_selection(r1, c1, r2, c2) {
+		return [Math.min(r1, r2), Math.min(c1, c2),
+				Math.max(r1, r2, 0), Math.max(c1, c2, 0)]
+	}
+
+	function clear_selection() {
+		$("#table >tbody >tr >td").removeClass('cell_selected');
+	}
+	
+	function select_cells(r1, c1, r2, c2) {
+		clear_selection();
+		for (var r = r1; r <= r2; r++) {
+			for (var c = c1; c <= c2; c++) {
 				cell = $('#table')[0].rows[r + 2].cells[c + 2];
 				$(cell).addClass('cell_selected');
 			}
 		}
+		
 	}
 
-
 	$(document).on("mouseover", "#table >tbody >tr >td", function(e) {
-		var r2 = this.parentNode.rowIndex - 2;
-		var c2 = this.cellIndex - 2;
-		onmouseover(r2, c2);
+		on_mouse_over_cell(this.parentNode.rowIndex - 2, this.cellIndex - 2);
 	});
+	
+	function merge_cells(r1, c1, r2, c2) {
+		clear_selection();
+		var table = document.getElementById('table');
+		var removed_cells = [];
+		for (var r = r2; r >= r1; r--) {
+			for (var c = c2; c >= c1; c--) {
+				if (r == r1 && c == c1)
+					continue;
+				cell = table.rows[r + 2].cells[c + 2];
+				removed_cells.push(btoa(cell.outerHTML)); // save deleted cell's html as base64
+				cell.parentNode.deleteCell(cell.cellIndex);
+			}
+		}
+		var cell = table.rows[r1 + 2].cells[c1 + 2];
+		cell.colSpan = c2 - c1 + 1;
+		cell.rowSpan = r2 - r1 + 1;
+		cell.setAttribute('data-removed-cells', removed_cells.join(','));
+		// var removed_cells = cell.getAttribute('data-removed-cells').split(',');
+		// for (var i = 0; i < removed_cells.length; i++)		
+			// console.debug(atob(removed_cells[i]));
+		// console.debug('merge');
+	}
+	
+	function split_cell(){
+	}
 
 	$(function() {
 		$.contextMenu({
-			selector : '#table',
-			callback : function(key, options) {
-				var m = "clicked: " + key;
-				console.debug(m);
-			},
+			selector : '#table >tbody >tr >td.cell_selected',
 			items : {
 				"merge_cells" : {
 					name : "Merge selected cells",
 					callback : function(e) {
-						var x = document.getElementById('table').rows[sys.r1 + 2].cells;
-						x[sys.c1 + 2].colSpan = "2";
-						console.debug('merge');
+						merge_cells(sys.r1, sys.c1, sys.r2, sys.c2);
 					}
 				},
 			}
@@ -110,7 +142,7 @@ newGroup = $('<td class="colgroup">&nbsp;</td>');
 newHeader = $('<td class="colheader">1</td>');
 
 function addRows(count) {
-	count = count || 1
+	count = count || 1;
 	lastTr = $('#table >tbody >tr').last()[0];
 	tr = $('<tr></tr>');
 	// tr = $('#table tr').eq(-1).after('<tr></tr>');
