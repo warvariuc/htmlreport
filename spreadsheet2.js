@@ -24,11 +24,8 @@ $(function() {
     // $(this).toggleClass('cell_highlight_over');
     // console.debug('Mouse click: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
     // });
-    for (var i = 0; i < 10; i++)
-        addColumns();
-    addRows(10);
 
-    $("#table >tbody >tr >td.cell").on("mousedown", function(e) {
+    $(document).on("mousedown", "#table >tbody >tr >td.cell", function(e) {
         if (e.which != 1)
             // need left button
             return;
@@ -41,7 +38,7 @@ $(function() {
         // $(document).on("selectstart", stub);
     });
 
-    $("#table >tbody >tr >td").on("mouseup", function(e) {
+    $(document).on("mouseup", "#table >tbody >tr >td", function(e) {
         if (e.which != 1)
             // need left button
             return;
@@ -97,7 +94,7 @@ $(function() {
     }
 
 
-    $("#table >tbody >tr >td").on("mouseover", function(e) {
+    $(document).on("mouseover", "#table >tbody >tr >td", function(e) {
         on_mouse_over_cell(this.parentNode.rowIndex - 2, this.cellIndex - 2);
     });
 
@@ -144,6 +141,10 @@ $(function() {
             }
         }
     });
+
+    for (var i = 0; i < 10; i++)
+        addColumns();
+    addRows(10);
 
 });
 
