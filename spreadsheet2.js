@@ -102,12 +102,12 @@ $(function() {
 	function merge_cells(r1, c1, r2, c2) {
 		clear_selection(1);
 		var table = document.getElementById('table');
-		for (var r = r2; r >= r1; r--) {
-			for (var c = c2; c >= c1; c--) {
+		for (var r = r1; r <= r2; r++) {
+			for (var c = c1; c <= c2; c++) {
 				if (r == r1 && c == c1)
 					continue;
 				var cell = table.rows[r + 2].cells[c + 2];
-				cell.style.display = 'none';
+				$(cell).addClass('hidden_cell');
 			}
 		}
 		var cell = table.rows[r1 + 2].cells[c1 + 2];
@@ -138,7 +138,6 @@ $(function() {
 	for (var i = 0; i < 10; i++)
 		addColumns();
 	addRows(10);
-
 });
 
 newCell = $('<td class="cell">#</td>');

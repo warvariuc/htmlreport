@@ -8,16 +8,20 @@
 		<script src="jquery.min.js" type="text/javascript"></script>
 		<script src="jquery.ui.position.js" type="text/javascript"></script>
 		<script src="jquery.contextMenu.js" type="text/javascript"></script>
+		<script src="resizable-tables.js"></script>
 		<script src="spreadsheet2.js"></script>
 	</head>
 	<body>
-		<table id="table">
+		<table id="table" class="resizable">
 			<tbody>
 				<tr>
 					<td class="colgroup" colspan="2" rowspan="2">&nbsp;</td>
+					<td class="hidden_cell"></td>
 					<td class="colgroup" colspan="1" data-groupid="default">&nbsp;</td>
 				</tr>
 				<tr>
+                    <td class="hidden_cell"></td>
+                    <td class="hidden_cell"></td>
 					<td class="colheader">1</td>
 				</tr>
 				<tr>

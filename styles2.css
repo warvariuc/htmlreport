@@ -16,7 +16,9 @@ body, input, textarea, div, table {
 	margin: 0px;
 	padding: 0px;
 }
-
+td.hidden_cell {
+    display: none;
+}
 #table {
 	border-collapse: collapse;
 	border-spacing: 0;   /* cellspacing="0"*/
