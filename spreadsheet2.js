@@ -25,7 +25,7 @@ $(function() {
 	// console.debug('Mouse click: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
 	// });
 
-	$(document).on("mousedown", "#table >tbody >tr >td.cell", function(e) {
+	$(document).on("mousedown", "#table>tbody>tr>td.cell", function(e) {
 		if (e.which != 1)
 			// need left button
 			return;
@@ -38,7 +38,7 @@ $(function() {
 		// $(document).on("selectstart", stub);
 	});
 
-	$(document).on("mouseup", "#table >tbody >tr >td", function(e) {
+	$(document).on("mouseup", "#table>tbody>tr>td", function(e) {
 		if (e.which != 1)
 			// need left button
 			return;
@@ -63,7 +63,7 @@ $(function() {
 		sys.r2 = r2;
 		sys.c2 = c2;
 
-		$("#table >tbody >tr >td").removeClass('cell_selected');
+		$("#table>tbody>tr>td").removeClass('cell_selected');
 		var _ = normalize_selection(sys.r1, sys.c1, sys.r2, sys.c2);
 		select_cells(_[0], _[1], _[2], _[3]);
 	}
@@ -79,7 +79,7 @@ $(function() {
 			sys.r2 = null;
 			sys.c2 = null;
 		}
-		$("#table >tbody >tr >td").removeClass('cell_selected');
+		$("#table>tbody>tr>td").removeClass('cell_selected');
 	}
 
 	function select_cells(r1, c1, r2, c2) {
@@ -94,7 +94,7 @@ $(function() {
 	}
 
 
-	$(document).on("mouseover", "#table >tbody >tr >td", function(e) {
+	$(document).on("mouseover", "#table>tbody>tr>td", function(e) {
 		$("#status_bar").text('' + this.parentNode.rowIndex + ', ' + this.cellIndex);
 		on_mouse_over_cell(this.parentNode.rowIndex - 2, this.cellIndex - 2);
 	});
@@ -120,7 +120,7 @@ $(function() {
 
 
 	$.contextMenu({
-		selector : '#table >tbody >tr >td.cell_selected',
+		selector : '#table>tbody>tr>td.cell_selected',
 		build : function($trigger, e) {
 			return {
 				items : {
@@ -135,22 +135,54 @@ $(function() {
 		}
 	});
 
+	var start = undefined;
+	var startX, startY, startWidth, startHeight;
+
+	$(document).on("mousedown", "#table>tbody>tr>td.colheader,#table>tbody>tr>td.rowheader", function(e) {
+		if (!e.shiftKey)
+		    return;
+		start = $(this);
+		startX = e.pageX;
+		startY = e.pageY;
+		startWidth = $(this).width();
+		startHeight = $(this).height();
+		// $(start).addClass("resizing");
+	});
+
+	$(document).on("mousemove", function(e) {
+		if (start) {
+			if (start.hasClass("colheader"))
+				start.width(startWidth + (e.pageX - startX));
+			else
+				start.height(startHeight + (e.pageY - startY));
+		}
+	});
+
+	$(document).on("mouseup", function() {
+		if (start) {
+			// $(start).removeClass("resizing");
+			start = undefined;
+		}
+	});
+
 	for (var i = 0; i < 10; i++)
 		addColumns();
 	addRows(10);
 });
 
 newCell = $('<td class="cell">#</td>');
-newGroup = $('<td class="colgroup">&nbsp;</td>');
-newHeader = $('<td class="colheader">1</td>');
+newColGroup = $('<td class="colgroup">&nbsp;</td>');
+newColHeader = $('<td class="colheader">1</td>');
+newRowGroup = $('<td class="rowgroup">&nbsp;</td>');
+newRowHeader = $('<td class="rowheader">1</td>');
 
 function addRows(count) {
 	count = count || 1;
 	var lastTr = $('#table >tbody >tr').last()[0];
 	var tr = $('<tr></tr>');
 	// tr = $('#table tr').eq(-1).after('<tr></tr>');
-	tr.append(newGroup.clone());
-	tr.append(newHeader.clone());
+	tr.append(newRowGroup.clone());
+	tr.append(newRowHeader.clone());
 	for (var i = 0; i < lastTr.cells.length - 2; i++)
 		tr.append(newCell.clone());
 	for (var i = 0; i < count; i++)
@@ -163,14 +195,14 @@ function addColumns(count, index) {
 		var td = $(this).children('td');
 		if (this.rowIndex == 0)
 			if (isInteger(index))
-				td.eq(index + 2).before(newGroup.clone());
+				td.eq(index + 2).before(newColGroup.clone());
 			else
-				td.eq(-1).after(newGroup.clone());
+				td.eq(-1).after(newColGroup.clone());
 		else if (this.rowIndex == 1)
 			if (isInteger(index))
-				td.eq(index + 2).before(newHeader.clone());
+				td.eq(index + 2).before(newColHeader.clone());
 			else
-				td.eq(-1).after(newHeader.clone());
+				td.eq(-1).after(newColHeader.clone());
 		else if (isInteger(index))
 			td.eq(index + 2).before(newCell.clone());
 		else

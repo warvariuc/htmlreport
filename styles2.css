@@ -16,9 +16,6 @@ body, input, textarea, div, table {
 	margin: 0px;
 	padding: 0px;
 }
-td.hidden_cell {
-    display: none;
-}
 #table {
 	border-collapse: collapse;
 	border-spacing: 0;   /* cellspacing="0"*/
@@ -33,20 +30,29 @@ td {
 	padding-right: 4px;
 	cursor: default;
 }
-.colheader {
+td.hidden_cell {
+    display: none;
+}
+.colheader, .rowheader {
 	color: #666666;
 	background-color: #EFEFEF;
-	border-right: 1px solid #666666;
-	border-bottom: 1px solid #666666;
+	border: 1px solid #666666;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+.rowgroup {
+	/*display: none;*/
+	color: #666666;
+	background-color: #FFFFFF;
+	border-bottom: 1px solid #CCCCCC;
 	padding-left: 5px;
 	padding-right: 5px;
 }
 .colgroup {
 	/*display: none;*/
 	color: #666666;
-	background-color: #EFEFEF;
-	border-right: 1px solid #666666;
-	border-bottom: 1px solid #666666;
+	background-color: #FFFFFF;
+	border-right: 1px solid #CCCCCC;
 	padding-left: 5px;
 	padding-right: 5px;
 }
@@ -59,31 +65,6 @@ td {
 	left: 0;
 	border: 1px solid silver;
 	background: #aaaaaa;
-}
-.header td {
-	padding: 0px;
-	border: 0px;
-}
-.header {
-	position: absolute;
-	background-color: #C0C0FF;
-	width: 100%;
-	z-index: 2;
-	padding-top: 1px;
-	height: 22px;
-	color: #333333;
-}
-.header a, .header, .footer a, .footer {
-	color: #333333;
-}
-.footer {
-	position: absolute;
-	border-top: 1px solid #666666;
-	background-color: #C0C0FF;
-	width: 100%;
-	z-index: 2;
-	height: 18px;
-	bottom: 0px;
 }
 .status {
 	position: absolute;
