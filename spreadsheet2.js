@@ -102,25 +102,17 @@ $(function() {
 	function merge_cells(r1, c1, r2, c2) {
 		clear_selection(1);
 		var table = document.getElementById('table');
-		var removed_cells = [];
 		for (var r = r2; r >= r1; r--) {
 			for (var c = c2; c >= c1; c--) {
 				if (r == r1 && c == c1)
 					continue;
 				var cell = table.rows[r + 2].cells[c + 2];
-				removed_cells.push(btoa(cell.outerHTML));
-				// save deleted cell's html as base64
-				cell.parentNode.deleteCell(cell.cellIndex);
+				cell.style.display = 'none';
 			}
 		}
 		var cell = table.rows[r1 + 2].cells[c1 + 2];
 		cell.colSpan = c2 - c1 + 1;
 		cell.rowSpan = r2 - r1 + 1;
-		cell.setAttribute('data-removed-cells', removed_cells.join(','));
-		// var removed_cells = cell.getAttribute('data-removed-cells').split(',');
-		// for (var i in removed_cells)
-		// console.debug(atob(removed_cells[i]));
-		// console.debug('merge');
 	}
 
 	function split_cell() {
