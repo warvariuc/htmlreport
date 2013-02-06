@@ -1,3 +1,7 @@
+function last(array) {
+	return array[array.length - 1];
+}
+
 function stub(e) {
 	return false;
 }
@@ -17,6 +21,7 @@ sys = {
 };
 
 $(function() {
+	table = document.getElementById('table');
 	// cursor keys only in keydown
 	// $(document).on("keydown", keypress);
 	// disable selection on the page
@@ -68,8 +73,8 @@ $(function() {
 		sys.selectionEnd = selectionEnd || sys.selectionEnd;
 
 		$("#table>tbody>tr>td").removeClass('cell_selected');
-		var _ = normalize_selection(sys.selectionStart.parentNode.rowIndex, sys.selectionStart.cellIndex, sys.selectionEnd.parentNode.rowIndex, sys.selectionEnd.cellIndex);
-		select_cells(_.r1 - 2, _.c1 - 2, _.r2 - 2, _.c2 - 2);
+		var _ = normalize_selection(sys.selectionStart.parentNode.rowIndex - 2, sys.selectionStart.cellIndex - 2, sys.selectionEnd.parentNode.rowIndex - 2, sys.selectionEnd.cellIndex - 2);
+		select_cells(_.r1, _.c1, _.r2, _.c2);
 	}
 
 	function reset_selection() {
@@ -93,7 +98,7 @@ $(function() {
 	/* indexes do not take into account group and header cells */
 	function select_cells(r1, c1, r2, c2) {
 		clear_selection();
-		var rows = document.getElementById('table').rows;
+		var rows = table.rows;
 		for (var r = r1; r <= r2; r++) {
 			for (var c = c1; c <= c2; c++) {
 				cell = rows[r + 2].cells[c + 2];
@@ -104,19 +109,20 @@ $(function() {
 
 
 	$(document).on("click", "#table>tbody>tr>td.colheader", function(e) {
-		var rows = document.getElementById('table').rows;
+		if (e.shiftKey)
+			return;
+		var rows = table.rows;
 		set_selection(rows[2].cells[this.cellIndex], rows[rows.length - 1].cells[this.cellIndex]);
 	});
 
 	/* indexes do not take into account group and header cells */
 	function merge_cells(r1, c1, r2, c2) {
 		reset_selection();
-		var rows = document.getElementById('table').rows;
 		for (var r = r1; r <= r2; r++) {
 			for (var c = c1; c <= c2; c++) {
 				if (r == r1 && c == c1)
 					continue;
-				var cell = rows[r + 2].cells[c + 2];
+				var cell = table.rows[r + 2].cells[c + 2];
 				$(cell).addClass('hidden_cell');
 			}
 		}
@@ -137,8 +143,10 @@ $(function() {
 					merge_cells : {
 						name : "Merge selected cells",
 						callback : function(e) {
-							var _ = normalize_selection(sys.selectionStart.parentNode.rowIndex, sys.selectionStart.cellIndex, sys.selectionEnd.parentNode.rowIndex, sys.selectionEnd.cellIndex);
-							merge_cells(_.r1 - 2, _.c1 - 2, _.r2 - 2, _.c2 - 2);
+							selectionStart = sys.selectionStart
+							var _ = normalize_selection(selectionStart.parentNode.rowIndex - 2, selectionStart.cellIndex - 2, sys.selectionEnd.parentNode.rowIndex - 2, sys.selectionEnd.cellIndex - 2);
+							merge_cells(_.r1, _.c1, _.r2, _.c2);
+							set_selection(selectionStart, selectionStart);
 						}
 					},
 				}
@@ -175,47 +183,48 @@ $(function() {
 		}
 	});
 
-	for (var i = 0; i < 10; i++)
-		addColumns();
+	addColumns(10);
 	addRows(10);
 });
 
-newCell = $('<td class="cell">#</td>');
-newColGroup = $('<td class="colgroup">&nbsp;</td>');
-newColHeader = $('<td class="colheader">1</td>');
-newRowGroup = $('<td class="rowgroup">&nbsp;</td>');
-newRowHeader = $('<td class="rowheader">1</td>');
+newCell = '<td class="cell">#</td>';
+newColGroup = '<td class="colgroup">&nbsp;</td>';
+newColHeader = '<td class="colheader">1</td>';
+newRowGroup = '<td class="rowgroup">&nbsp;</td>';
+newRowHeader = '<td class="rowheader">1</td>';
 
-function addRows(count) {
+function addRows(count, index) {
 	count = count || 1;
-	var lastTr = $('#table>tbody>tr').last()[0];
-	var tr = $('<tr></tr>');
-	// tr = $('#table tr').eq(-1).after('<tr></tr>');
-	tr.append(newRowGroup.clone());
-	tr.append(newRowHeader.clone());
-	for (var i = 0; i < lastTr.cells.length - 2; i++)
-		tr.append(newCell.clone());
-	for (var i = 0; i < count; i++)
-		tr.clone().insertAfter(lastTr);
+	if (index === undefined)
+		index = -1
+	var colCount = last(table.rows).cells.length;
+	for (var i = 0; i < count; i++) {
+		var row = table.insertRow(index)
+		var td = row.insertCell(-1)
+		td.outerHTML = newRowGroup
+		td = row.insertCell(-1)
+		td.outerHTML = newRowHeader
+		for (var colNo = 0; colNo < colCount - 2; colNo++) {
+			td = row.insertCell(-1)
+			td.outerHTML = newCell
+		}
+	}
 }
 
 function addColumns(count, index) {
 	count = count || 1;
-	$('#table>tbody>tr').each(function() {
-		var td = $(this).children('td');
-		if (this.rowIndex == 0)
-			if (isInteger(index))
-				td.eq(index + 2).before(newColGroup.clone());
+	if (index === undefined)
+		index = -1
+	var rowCount = table.rows.length;
+	for (var i = 0; i < count; i++)
+		for (var rowNo = 0; rowNo < rowCount; rowNo++) {
+			row = table.rows[rowNo];
+			var td = row.insertCell(index);
+			if (rowNo == 0)
+				td.outerHTML = newColGroup
+			else if (rowNo == 1)
+				td.outerHTML = newColHeader
 			else
-				td.eq(-1).after(newColGroup.clone());
-		else if (this.rowIndex == 1)
-			if (isInteger(index))
-				td.eq(index + 2).before(newColHeader.clone());
-			else
-				td.eq(-1).after(newColHeader.clone());
-		else if (isInteger(index))
-			td.eq(index + 2).before(newCell.clone());
-		else
-			td.eq(-1).after(newCell.clone());
-	});
+				td.outerHTML = newCell
+		}
 }

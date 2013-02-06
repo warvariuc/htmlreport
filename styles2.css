@@ -86,7 +86,8 @@ td.hidden_cell {
 	background-color: #FFFFC0;
 }
 .cell_selected {
-	background-color: #EFEFEF;
+	background-color: #404040;
+	color: #FFFFFF
 }
 .border_highlight {
 	background-color: #C0FFC0;
