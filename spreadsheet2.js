@@ -42,7 +42,7 @@ $(function() {
 		if (e.which != 1)
 			// need left button
 			return;
-		console.debug('Mouse up: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
+		// console.debug('Mouse up: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
 		// $(document).off("mousedown", stub);
 		// $(document).off("selectstart", stub);
 		sys.isMouseDown = false;
@@ -69,19 +69,16 @@ $(function() {
 	}
 
 	function normalize_selection(r1, c1, r2, c2) {
-		return [Math.min(r1, r2), Math.min(c1, c2), Math.max(r1, r2, 0), Math.max(c1, c2, 0)]
+		return [Math.max(Math.min(r1, r2), 0), Math.max(Math.min(c1, c2), 0), Math.max(r1, r2, 0), Math.max(c1, c2, 0)]
 	}
 
 	function clear_selection(reset) {
-		if (reset) {
-			sys.r1 = null;
-			sys.c1 = null;
-			sys.r2 = null;
-			sys.c2 = null;
-		}
+		if (reset)
+			sys.r1 = sys.c1 = sys.r2 = sys.c2 = null;
 		$("#table>tbody>tr>td").removeClass('cell_selected');
 	}
 
+    /* indexes do not take into account group and header cells */
 	function select_cells(r1, c1, r2, c2) {
 		clear_selection();
 		for (var r = r1; r <= r2; r++) {
@@ -90,14 +87,21 @@ $(function() {
 				$(cell).addClass('cell_selected');
 			}
 		}
-
 	}
-
 
 	$(document).on("mouseover", "#table>tbody>tr>td", function(e) {
 		$("#status_bar").text('' + this.parentNode.rowIndex + ', ' + this.cellIndex);
 		on_mouse_over_cell(this.parentNode.rowIndex - 2, this.cellIndex - 2);
 	});
+
+
+    $(document).on("click", "#table>tbody>tr>td.colheader", function(e) {
+        var table = document.getElementById('table');
+        sys.r1 = 0;
+        sys.c1 = sys.c2 = this.cellIndex - 2;
+        sys.r2 = table.rows.length - 3;
+        select_cells(sys.r1, sys.c1, sys.r2, sys.c2);
+    });
 
 	function merge_cells(r1, c1, r2, c2) {
 		clear_selection(1);
@@ -135,33 +139,32 @@ $(function() {
 		}
 	});
 
-	var start = undefined;
-	var startX, startY, startWidth, startHeight;
+	var start = null;
 
 	$(document).on("mousedown", "#table>tbody>tr>td.colheader,#table>tbody>tr>td.rowheader", function(e) {
 		if (!e.shiftKey)
 		    return;
 		start = $(this);
-		startX = e.pageX;
-		startY = e.pageY;
-		startWidth = $(this).width();
-		startHeight = $(this).height();
+		start.data("startX", e.pageX);
+		start.data("startY", e.pageY);
+		start.data("startWidth" , $(this).width());
+		start.data("startHeight", $(this).height());
 		// $(start).addClass("resizing");
 	});
 
 	$(document).on("mousemove", function(e) {
 		if (start) {
 			if (start.hasClass("colheader"))
-				start.width(startWidth + (e.pageX - startX));
+				start.width(start.data("startWidth") + (e.pageX - start.data("startX")));
 			else
-				start.height(startHeight + (e.pageY - startY));
+				start.height(start.data("startHeight") + (e.pageY - start.data("startY")));
 		}
 	});
 
 	$(document).on("mouseup", function() {
 		if (start) {
 			// $(start).removeClass("resizing");
-			start = undefined;
+			start = null;
 		}
 	});
 
@@ -178,7 +181,7 @@ newRowHeader = $('<td class="rowheader">1</td>');
 
 function addRows(count) {
 	count = count || 1;
-	var lastTr = $('#table >tbody >tr').last()[0];
+	var lastTr = $('#table>tbody>tr').last()[0];
 	var tr = $('<tr></tr>');
 	// tr = $('#table tr').eq(-1).after('<tr></tr>');
 	tr.append(newRowGroup.clone());
@@ -191,7 +194,7 @@ function addRows(count) {
 
 function addColumns(count, index) {
 	count = count || 1;
-	$('#table >tbody >tr').each(function() {
+	$('#table>tbody>tr').each(function() {
 		var td = $(this).children('td');
 		if (this.rowIndex == 0)
 			if (isInteger(index))
