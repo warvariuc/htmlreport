@@ -12,6 +12,8 @@ sys = {
 	r2 : null,
 	rc : null,
 	isMouseDown : null,
+	selectionStart : null,
+	selectionEnd : null,
 };
 
 $(function() {
@@ -30,87 +32,91 @@ $(function() {
 			// need left button
 			return;
 		sys.isMouseDown = true;
-		sys.r1 = this.parentNode.rowIndex - 2;
-		sys.c1 = this.cellIndex - 2;
+		sys.selectionStart = this;
 		// console.debug('Mouse down: R' + sys.r1 + 'C' + sys.c1);
-		on_mouse_over_cell(sys.r1, sys.c1);
+		on_mouse_over_cell(this);
 		// $(document).on("mousedown", stub);
 		// $(document).on("selectstart", stub);
 	});
 
 	$(document).on("mouseup", "#table>tbody>tr>td", function(e) {
-		if (e.which != 1)
-			// need left button
+		if (!sys.isMouseDown)
 			return;
 		// console.debug('Mouse up: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
 		// $(document).off("mousedown", stub);
 		// $(document).off("selectstart", stub);
 		sys.isMouseDown = false;
-		var _ = normalize_selection(sys.r1, sys.c1, sys.r2, sys.c2);
-		sys.r1 = _[0];
-		sys.c1 = _[1];
-		sys.r2 = _[2];
-		sys.c2 = _[3];
 	});
 
-	function on_mouse_over_cell(r2, c2) {
+	$(document).on("mouseover", "#table>tbody>tr>td", function(e) {
+		$("#status_bar").text('' + this.parentNode.rowIndex + ', ' + this.cellIndex);
+		on_mouse_over_cell(this);
+	});
+
+	function on_mouse_over_cell(selectionEnd) {
 		if (!sys.isMouseDown)
 			return;
 		// console.debug('Mouse over: R' + r2 + 'C' + c2);
-		if (r2 === sys.r2 && c2 === sys.c2)
+		if (sys.selectionEnd === selectionEnd)
 			// already highlighted
 			return;
-		sys.r2 = r2;
-		sys.c2 = c2;
+		set_selection(undefined, selectionEnd);
+	}
+
+	function set_selection(selectionStart, selectionEnd) {
+		sys.selectionStart = selectionStart || sys.selectionStart;
+		sys.selectionEnd = selectionEnd || sys.selectionEnd;
 
 		$("#table>tbody>tr>td").removeClass('cell_selected');
-		var _ = normalize_selection(sys.r1, sys.c1, sys.r2, sys.c2);
-		select_cells(_[0], _[1], _[2], _[3]);
+		var _ = normalize_selection(sys.selectionStart.parentNode.rowIndex, sys.selectionStart.cellIndex, sys.selectionEnd.parentNode.rowIndex, sys.selectionEnd.cellIndex);
+		select_cells(_.r1 - 2, _.c1 - 2, _.r2 - 2, _.c2 - 2);
+	}
+
+	function reset_selection() {
+		clear_selection();
+		sys.selectionStart = sys.selectionEnd = null;
 	}
 
 	function normalize_selection(r1, c1, r2, c2) {
-		return [Math.max(Math.min(r1, r2), 0), Math.max(Math.min(c1, c2), 0), Math.max(r1, r2, 0), Math.max(c1, c2, 0)]
+		return {
+			r1 : Math.max(Math.min(r1, r2), 0),
+			c1 : Math.max(Math.min(c1, c2), 0),
+			r2 : Math.max(r1, r2, 0),
+			c2 : Math.max(c1, c2, 0),
+		}
 	}
 
-	function clear_selection(reset) {
-		if (reset)
-			sys.r1 = sys.c1 = sys.r2 = sys.c2 = null;
+	function clear_selection() {
 		$("#table>tbody>tr>td").removeClass('cell_selected');
 	}
 
-    /* indexes do not take into account group and header cells */
+	/* indexes do not take into account group and header cells */
 	function select_cells(r1, c1, r2, c2) {
 		clear_selection();
+		var rows = document.getElementById('table').rows;
 		for (var r = r1; r <= r2; r++) {
 			for (var c = c1; c <= c2; c++) {
-				cell = document.getElementById('table').rows[r + 2].cells[c + 2];
+				cell = rows[r + 2].cells[c + 2];
 				$(cell).addClass('cell_selected');
 			}
 		}
 	}
 
-	$(document).on("mouseover", "#table>tbody>tr>td", function(e) {
-		$("#status_bar").text('' + this.parentNode.rowIndex + ', ' + this.cellIndex);
-		on_mouse_over_cell(this.parentNode.rowIndex - 2, this.cellIndex - 2);
+
+	$(document).on("click", "#table>tbody>tr>td.colheader", function(e) {
+		var rows = document.getElementById('table').rows;
+		set_selection(rows[2].cells[this.cellIndex], rows[rows.length - 1].cells[this.cellIndex]);
 	});
 
-
-    $(document).on("click", "#table>tbody>tr>td.colheader", function(e) {
-        var table = document.getElementById('table');
-        sys.r1 = 0;
-        sys.c1 = sys.c2 = this.cellIndex - 2;
-        sys.r2 = table.rows.length - 3;
-        select_cells(sys.r1, sys.c1, sys.r2, sys.c2);
-    });
-
+	/* indexes do not take into account group and header cells */
 	function merge_cells(r1, c1, r2, c2) {
-		clear_selection(1);
-		var table = document.getElementById('table');
+		reset_selection();
+		var rows = document.getElementById('table').rows;
 		for (var r = r1; r <= r2; r++) {
 			for (var c = c1; c <= c2; c++) {
 				if (r == r1 && c == c1)
 					continue;
-				var cell = table.rows[r + 2].cells[c + 2];
+				var cell = rows[r + 2].cells[c + 2];
 				$(cell).addClass('hidden_cell');
 			}
 		}
@@ -131,7 +137,8 @@ $(function() {
 					merge_cells : {
 						name : "Merge selected cells",
 						callback : function(e) {
-							merge_cells(sys.r1, sys.c1, sys.r2, sys.c2);
+							var _ = normalize_selection(sys.selectionStart.parentNode.rowIndex, sys.selectionStart.cellIndex, sys.selectionEnd.parentNode.rowIndex, sys.selectionEnd.cellIndex);
+							merge_cells(_.r1 - 2, _.c1 - 2, _.r2 - 2, _.c2 - 2);
 						}
 					},
 				}
@@ -143,11 +150,11 @@ $(function() {
 
 	$(document).on("mousedown", "#table>tbody>tr>td.colheader,#table>tbody>tr>td.rowheader", function(e) {
 		if (!e.shiftKey)
-		    return;
+			return;
 		start = $(this);
 		start.data("startX", e.pageX);
 		start.data("startY", e.pageY);
-		start.data("startWidth" , $(this).width());
+		start.data("startWidth", $(this).width());
 		start.data("startHeight", $(this).height());
 		// $(start).addClass("resizing");
 	});
