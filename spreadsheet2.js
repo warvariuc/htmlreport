@@ -1,3 +1,5 @@
+"use strict";
+
 function last(array) {
 	return array[array.length - 1];
 }
@@ -10,7 +12,7 @@ function isInteger(n) {
 	return n === +n && n === (n | 0);
 }
 
-sys = {
+var sys = {
 	r1 : null,
 	c1 : null,
 	r2 : null,
@@ -19,6 +21,8 @@ sys = {
 	selectionStart : null,
 	selectionEnd : null,
 };
+
+var table;
 
 $(function() {
 	table = document.getElementById('table');
@@ -101,7 +105,7 @@ $(function() {
 		var rows = table.rows;
 		for (var r = r1; r <= r2; r++) {
 			for (var c = c1; c <= c2; c++) {
-				cell = rows[r + 2].cells[c + 2];
+				var cell = rows[r + 2].cells[c + 2];
 				$(cell).addClass('cell_selected');
 			}
 		}
@@ -143,7 +147,7 @@ $(function() {
 					merge_cells : {
 						name : "Merge selected cells",
 						callback : function(e) {
-							selectionStart = sys.selectionStart
+							var selectionStart = sys.selectionStart
 							var _ = normalize_selection(selectionStart.parentNode.rowIndex - 2, selectionStart.cellIndex - 2, sys.selectionEnd.parentNode.rowIndex - 2, sys.selectionEnd.cellIndex - 2);
 							merge_cells(_.r1, _.c1, _.r2, _.c2);
 							set_selection(selectionStart, selectionStart);
@@ -187,11 +191,11 @@ $(function() {
 	addRows(10);
 });
 
-newCell = '<td class="cell">#</td>';
-newColGroup = '<td class="colgroup">&nbsp;</td>';
-newColHeader = '<td class="colheader">1</td>';
-newRowGroup = '<td class="rowgroup">&nbsp;</td>';
-newRowHeader = '<td class="rowheader">1</td>';
+var newCell = '<td class="cell">#</td>',
+	newColGroup = '<td class="colgroup">&nbsp;</td>',
+	newColHeader = '<td class="colheader">1</td>',
+	newRowGroup = '<td class="rowgroup">&nbsp;</td>',
+	newRowHeader = '<td class="rowheader">1</td>';
 
 function addRows(count, index) {
 	count = count || 1;
@@ -218,7 +222,7 @@ function addColumns(count, index) {
 	var rowCount = table.rows.length;
 	for (var i = 0; i < count; i++)
 		for (var rowNo = 0; rowNo < rowCount; rowNo++) {
-			row = table.rows[rowNo];
+			var row = table.rows[rowNo];
 			var td = row.insertCell(index);
 			if (rowNo == 0)
 				td.outerHTML = newColGroup
