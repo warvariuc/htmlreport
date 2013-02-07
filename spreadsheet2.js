@@ -13,13 +13,9 @@ function isInteger(n) {
 }
 
 var sys = {
-	r1 : null,
-	c1 : null,
-	r2 : null,
-	rc : null,
-	isMouseDown : null,
 	selectionStart : null,
 	selectionEnd : null,
+	draggingStart : null,
 };
 
 var table;
@@ -77,7 +73,7 @@ $(function() {
 		sys.selectionEnd = selectionEnd || sys.selectionEnd;
 
 		$("#table>tbody>tr>td").removeClass('cell_selected');
-		var _ = normalize_selection(sys.selectionStart.parentNode.rowIndex - 2, sys.selectionStart.cellIndex - 2, sys.selectionEnd.parentNode.rowIndex - 2, sys.selectionEnd.cellIndex - 2);
+		var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
 		select_cells(_.r1, _.c1, _.r2, _.c2);
 	}
 
@@ -86,7 +82,11 @@ $(function() {
 		sys.selectionStart = sys.selectionEnd = null;
 	}
 
-	function normalize_selection(r1, c1, r2, c2) {
+	function normalize_selection(selectionStart, selectionEnd) {
+		var r1 = selectionStart.parentNode.rowIndex - 2;
+		var c1 = selectionStart.cellIndex - 2;
+		var r2 = selectionEnd.parentNode.rowIndex - 2;
+		var c2 = selectionEnd.cellIndex - 2;
 		return {
 			r1 : Math.max(Math.min(r1, r2), 0),
 			c1 : Math.max(Math.min(c1, c2), 0),
@@ -148,7 +148,7 @@ $(function() {
 						name : "Merge selected cells",
 						callback : function(e) {
 							var selectionStart = sys.selectionStart
-							var _ = normalize_selection(selectionStart.parentNode.rowIndex - 2, selectionStart.cellIndex - 2, sys.selectionEnd.parentNode.rowIndex - 2, sys.selectionEnd.cellIndex - 2);
+							var _ = normalize_selection(selectionStart, sys.selectionEnd);
 							merge_cells(_.r1, _.c1, _.r2, _.c2);
 							set_selection(selectionStart, selectionStart);
 						}
@@ -158,32 +158,28 @@ $(function() {
 		}
 	});
 
-	var start = null;
-
 	$(document).on("mousedown", "#table>tbody>tr>td.colheader,#table>tbody>tr>td.rowheader", function(e) {
 		if (!e.shiftKey)
 			return;
-		start = $(this);
-		start.data("startX", e.pageX);
-		start.data("startY", e.pageY);
-		start.data("startWidth", $(this).width());
-		start.data("startHeight", $(this).height());
-		// $(start).addClass("resizing");
+		sys.draggingStart = $(this);
+		sys.draggingStart.data("startX", e.pageX);
+		sys.draggingStart.data("startY", e.pageY);
+		sys.draggingStart.data("startWidth", $(this).width());
+		sys.draggingStart.data("startHeight", $(this).height());
 	});
 
 	$(document).on("mousemove", function(e) {
-		if (start) {
-			if (start.hasClass("colheader"))
-				start.width(start.data("startWidth") + (e.pageX - start.data("startX")));
+		if (sys.draggingStart) {
+			if (sys.draggingStart.hasClass("colheader"))
+				sys.draggingStart.width(sys.draggingStart.data("startWidth") + (e.pageX - sys.draggingStart.data("startX")));
 			else
-				start.height(start.data("startHeight") + (e.pageY - start.data("startY")));
+				sys.draggingStart.height(sys.draggingStart.data("startHeight") + (e.pageY - sys.draggingStart.data("startY")));
 		}
 	});
 
 	$(document).on("mouseup", function() {
-		if (start) {
-			// $(start).removeClass("resizing");
-			start = null;
+		if (sys.draggingStart) {
+			sys.draggingStart = null;
 		}
 	});
 
@@ -191,17 +187,17 @@ $(function() {
 	addRows(10);
 });
 
-var newCell = '<td class="cell">#</td>',
-	newColGroup = '<td class="colgroup">&nbsp;</td>',
-	newColHeader = '<td class="colheader">1</td>',
-	newRowGroup = '<td class="rowgroup">&nbsp;</td>',
-	newRowHeader = '<td class="rowheader">1</td>';
+var newCell = '<td class="cell">#</td>';
+var newColGroup = '<td class="colgroup">&nbsp;</td>';
+var newColHeader = '<td class="colheader">1</td>';
+var newRowGroup = '<td class="rowgroup">&nbsp;</td>';
+var newRowHeader = '<td class="rowheader">1</td>';
 
 function addRows(count, index) {
 	count = count || 1;
 	if (index === undefined)
 		index = -1
-	var colCount = last(table.rows).cells.length;
+	var colCount = table.rows[0].cells.length;
 	for (var i = 0; i < count; i++) {
 		var row = table.insertRow(index)
 		var td = row.insertCell(-1)
@@ -213,6 +209,12 @@ function addRows(count, index) {
 			td.outerHTML = newCell
 		}
 	}
+	// update numbering
+	var rowCount = table.rows.length;
+	if (index == -1)
+		index = rowCount - count;
+	for (; index < rowCount; index++)
+		table.rows[index].cells[1].innerHTML = index;
 }
 
 function addColumns(count, index) {
@@ -231,4 +233,11 @@ function addColumns(count, index) {
 			else
 				td.outerHTML = newCell
 		}
+	// update numbering
+	var colCount = table.rows[0].cells.length;
+	if (index == -1)
+		index = colCount - count;
+	for (; index < colCount; index++) {
+		table.rows[1].cells[index].innerHTML = index;
+	}
 }
