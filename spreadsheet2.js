@@ -107,8 +107,8 @@ $(function() {
 			for (var r = _r1; r <= _r2; r++) {
 				for (var c = _c1; c <= _c2; c++) {
 					var cell = table.rows[r + 2].cells[c + 2];
-					var __r2 = Math.max(_r2, r + (cell.rowSpan || 0) - 1)
-					var __c2 = Math.max(_c2, c + (cell.colSpan || 0) - 1)
+					var __r2 = Math.max(_r2, r + cell.rowSpan - 1)
+					var __c2 = Math.max(_c2, c + cell.colSpan - 1)
 					if (__r2 > _r2 || __c2 > _c2) {
 						select(_r1, _c1, __r2, __c2);
 						return;
