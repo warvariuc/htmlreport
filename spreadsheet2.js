@@ -102,13 +102,32 @@ $(function() {
 	/* indexes do not take into account group and header cells */
 	function select_cells(r1, c1, r2, c2) {
 		clear_selection();
-		var rows = table.rows;
-		for (var r = r1; r <= r2; r++) {
-			for (var c = c1; c <= c2; c++) {
-				var cell = rows[r + 2].cells[c + 2];
-				$(cell).addClass('cell_selected');
+		function select(_r1, _c1, _r2, _c2) {
+			// not very nice iterative solution, but it's simple and it works. A recursive way would be nice
+			for (var r = _r1; r <= _r2; r++) {
+				for (var c = _c1; c <= _c2; c++) {
+					var cell = table.rows[r + 2].cells[c + 2];
+					var __r2 = Math.max(_r2, r + (cell.rowSpan || 0) - 1)
+					var __c2 = Math.max(_c2, c + (cell.colSpan || 0) - 1)
+					if (__r2 > _r2 || __c2 > _c2) {
+						select(_r1, _c1, __r2, __c2);
+						return;
+					}
+					cell = $(cell);
+					if (cell.hasClass('hidden_cell')) {
+						var _ = cell.attr('data-merged').split(',');
+						var __r1 = Math.min(parseInt(_[0]) - 2, _r1);
+						var __c1 = Math.min(parseInt(_[1]) - 2, _c1);
+						if (__r1 < _r1 || __c1 < _c1) {
+							select(__r1, __c1, _r2, _c2);
+							return;
+						}
+					}
+					$(cell).addClass('cell_selected');
+				}
 			}
 		}
+		select(r1, c1, r2, c2);
 	}
 
 
@@ -126,8 +145,9 @@ $(function() {
 			for (var c = c1; c <= c2; c++) {
 				if (r == r1 && c == c1)
 					continue;
-				var cell = table.rows[r + 2].cells[c + 2];
-				$(cell).addClass('hidden_cell');
+				var cell = $(table.rows[r + 2].cells[c + 2]);
+				cell.addClass('hidden_cell');
+				cell.attr('data-merged', [r1 + 2, c1 + 2].join(','));
 			}
 		}
 		var cell = table.rows[r1 + 2].cells[c1 + 2];
