@@ -32,9 +32,9 @@ $(function() {
 	// console.debug('Mouse click: R' + (this.parentNode.rowIndex - 2) + 'C' + (this.cellIndex - 2));
 	// });
 
-	$(document).on("mousedown", "#table>tbody>tr>td.cell", function(e) {
-		if (e.which != 1)
-			// need left button
+	$(document).on("mousedown", "#table>tbody>tr>td", function(e) {
+		if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
+			// need left button without modifiers
 			return;
 		sys.isMouseDown = true;
 		sys.selectionStart = this;
@@ -59,22 +59,16 @@ $(function() {
 	});
 
 	function on_mouse_over_cell(selectionEnd) {
-		if (!sys.isMouseDown)
-			return;
-		// console.debug('Mouse over: R' + r2 + 'C' + c2);
-		if (sys.selectionEnd === selectionEnd)
-			// already highlighted
-			return;
-		set_selection(undefined, selectionEnd);
+		if (sys.isMouseDown && sys.selectionEnd !== selectionEnd)
+			set_selection(undefined, selectionEnd);
 	}
 
 	function set_selection(selectionStart, selectionEnd) {
 		sys.selectionStart = selectionStart || sys.selectionStart;
 		sys.selectionEnd = selectionEnd || sys.selectionEnd;
-
 		$("#table>tbody>tr>td").removeClass('cell_selected');
 		var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
-		select_cells(_.r1, _.c1, _.r2, _.c2);
+		select_cells(Math.max(_.r1, 0), Math.max(_.c1, 0), _.r2, _.c2);
 	}
 
 	function reset_selection() {
@@ -83,15 +77,35 @@ $(function() {
 	}
 
 	function normalize_selection(selectionStart, selectionEnd) {
-		var r1 = selectionStart.parentNode.rowIndex - 2;
-		var c1 = selectionStart.cellIndex - 2;
-		var r2 = selectionEnd.parentNode.rowIndex - 2;
-		var c2 = selectionEnd.cellIndex - 2;
+		var r1, c1, r2, c2;
+		if (selectionStart.classList.contains('cell')) {
+			// a simple cell was the start
+			r1 = selectionStart.parentNode.rowIndex;
+			c1 = selectionStart.cellIndex;
+			r2 = selectionEnd.parentNode.rowIndex;
+			c2 = selectionEnd.cellIndex;
+		} else if (selectionStart.classList.contains('colheader')) {
+			// a column header was the start
+			r1 = 2;
+			c1 = selectionStart.cellIndex;
+			r2 = table.rows.length - 1;
+			c2 = selectionEnd.cellIndex;
+		} else if (selectionStart.classList.contains('rowheader')) {
+			// a row header was the start
+			r1 = selectionStart.parentNode.rowIndex;
+			c1 = 2;
+			r2 = selectionEnd.parentNode.rowIndex;
+			c2 = table.rows[0].cells.length - 1;
+		}
 		return {
-			r1 : Math.max(Math.min(r1, r2), 0),
-			c1 : Math.max(Math.min(c1, c2), 0),
-			r2 : Math.max(r1, r2, 0),
-			c2 : Math.max(c1, c2, 0),
+			r1 : Math.min(r1, r2) - 2,
+			c1 : Math.min(c1, c2) - 2,
+			r2 : Math.max(r1, r2) - 2,
+			c2 : Math.max(c1, c2) - 2,
+			// r1 : Math.max(Math.min(r1, r2), 0) - 2,
+			// c1 : Math.max(Math.min(c1, c2), 0) - 2,
+			// r2 : Math.max(r1, r2, 0) - 2,
+			// c2 : Math.max(c1, c2, 0) - 2,
 		}
 	}
 
@@ -113,9 +127,8 @@ $(function() {
 						select(_r1, _c1, __r2, __c2);
 						return;
 					}
-					cell = $(cell);
-					if (cell.hasClass('hidden_cell')) {
-						var _ = cell.attr('data-merged').split(',');
+					if (cell.classList.contains('hidden_cell')) {
+						var _ = cell.getAttribute('data-merged').split(',');
 						var __r1 = Math.min(parseInt(_[0]) - 2, _r1);
 						var __c1 = Math.min(parseInt(_[1]) - 2, _c1);
 						if (__r1 < _r1 || __c1 < _c1) {
@@ -123,20 +136,13 @@ $(function() {
 							return;
 						}
 					}
-					$(cell).addClass('cell_selected');
+					cell.classList.add('cell_selected');
 				}
 			}
 		}
+
 		select(r1, c1, r2, c2);
 	}
-
-
-	$(document).on("click", "#table>tbody>tr>td.colheader", function(e) {
-		if (e.shiftKey)
-			return;
-		var rows = table.rows;
-		set_selection(rows[2].cells[this.cellIndex], rows[rows.length - 1].cells[this.cellIndex]);
-	});
 
 	/* indexes do not take into account group and header cells */
 	function merge_cells(r1, c1, r2, c2) {
@@ -145,9 +151,9 @@ $(function() {
 			for (var c = c1; c <= c2; c++) {
 				if (r == r1 && c == c1)
 					continue;
-				var cell = $(table.rows[r + 2].cells[c + 2]);
-				cell.addClass('hidden_cell');
-				cell.attr('data-merged', [r1 + 2, c1 + 2].join(','));
+				var cell = table.rows[r + 2].cells[c + 2];
+				cell.classList.add('hidden_cell');
+				cell.setAttribute('data-merged', [r1 + 2, c1 + 2].join(','));
 			}
 		}
 		var cell = table.rows[r1 + 2].cells[c1 + 2];
@@ -178,6 +184,64 @@ $(function() {
 		}
 	});
 
+	$.contextMenu({
+		selector : '#table>tbody>tr>td.colheader',
+		build : function($trigger, e) {
+			var el = $trigger[0];
+			if (!sys.selectionStart)
+				set_selection(el, el);
+			else {
+				if (sys.selectionStart.classList.contains('colheader')) {
+					var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
+					if (el.cellIndex - 2 < _.c1 || el.cellIndex - 2 > _.c2)
+						set_selection(el, el);
+				} else
+					set_selection(el, el);
+			}
+			return {
+				items : {
+					insert_columns : {
+						name : "Insert columns",
+						callback : function(e) {
+							var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
+							addColumns(_.c2 - _.c1 + 1, _.c1);
+							reset_selection();
+						}
+					},
+				}
+			}
+		}
+	});
+
+	$.contextMenu({
+		selector : '#table>tbody>tr>td.rowheader',
+		build : function($trigger, e) {
+			var el = $trigger[0];
+			if (!sys.selectionStart)
+				set_selection(el, el);
+			else {
+				if (sys.selectionStart.classList.contains('rowheader')) {
+					var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
+					if (el.parentNode.rowIndex - 2 < _.r1 || el.parentNode.rowIndex - 2 > _.r2)
+						set_selection(el, el);
+				} else
+					set_selection(el, el);
+			}
+			return {
+				items : {
+					insert_rows : {
+						name : "Insert rows",
+						callback : function(e) {
+							var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
+							addRows(_.r2 - _.r1 + 1, _.r1);
+							reset_selection();
+						}
+					},
+				}
+			}
+		}
+	});
+
 	$(document).on("mousedown", "#table>tbody>tr>td.colheader,#table>tbody>tr>td.rowheader", function(e) {
 		if (!e.shiftKey)
 			return;
@@ -190,7 +254,7 @@ $(function() {
 
 	$(document).on("mousemove", function(e) {
 		if (sys.draggingStart) {
-			if (sys.draggingStart.hasClass("colheader"))
+			if (sys.draggingStart.classList.contains("colheader"))
 				sys.draggingStart.width(sys.draggingStart.data("startWidth") + (e.pageX - sys.draggingStart.data("startX")));
 			else
 				sys.draggingStart.height(sys.draggingStart.data("startHeight") + (e.pageY - sys.draggingStart.data("startY")));
@@ -214,9 +278,9 @@ var newRowGroup = '<td class="rowgroup">&nbsp;</td>';
 var newRowHeader = '<td class="rowheader">1</td>';
 
 function addRows(count, index) {
+	// index doesn't count group and header columns
 	count = count || 1;
-	if (index === undefined)
-		index = -1
+	index = (index === undefined) ? -1 : index + 2;
 	var colCount = table.rows[0].cells.length;
 	for (var i = 0; i < count; i++) {
 		var row = table.insertRow(index)
@@ -234,13 +298,12 @@ function addRows(count, index) {
 	if (index == -1)
 		index = rowCount - count;
 	for (; index < rowCount; index++)
-		table.rows[index].cells[1].innerHTML = index;
+		table.rows[index].cells[1].innerHTML = index - 1;
 }
 
 function addColumns(count, index) {
 	count = count || 1;
-	if (index === undefined)
-		index = -1
+	index = (index === undefined) ? -1 : index + 2;
 	var rowCount = table.rows.length;
 	for (var i = 0; i < count; i++)
 		for (var rowNo = 0; rowNo < rowCount; rowNo++) {
@@ -258,6 +321,6 @@ function addColumns(count, index) {
 	if (index == -1)
 		index = colCount - count;
 	for (; index < colCount; index++) {
-		table.rows[1].cells[index].innerHTML = index;
+		table.rows[1].cells[index].innerHTML = index - 1;
 	}
 }
