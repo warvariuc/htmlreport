@@ -17,7 +17,7 @@ body, input, textarea, div, table {
 }
 #table {
 	border-collapse: collapse;
-	border-spacing: 0;   /* cellspacing="0"*/
+	border-spacing: 0; /* cellspacing="0"*/
 	border-left: 1px solid #666666;
 	border-top: 1px solid #666666;
 }
@@ -30,7 +30,7 @@ td {
 	cursor: default;
 }
 td.hidden_cell {
-    display: none;
+	display: none;
 }
 .colheader, .rowheader {
 	color: #666666;
@@ -64,25 +64,6 @@ td.hidden_cell {
 	left: 0;
 	border: 1px solid silver;
 	background: #aaaaaa;
-}
-.status {
-	position: absolute;
-	border-top: 1px solid #666666;
-	border-left: 1px solid #666666;
-	background-color: #C0C0FF;
-	z-index: 2;
-	height: 18px;
-	bottom: 0px;
-	right: 3px;
-	padding-left: 5px;
-}
-.empty {
-	padding: 0px;
-	margin: 0px;
-	border: 0px;
-}
-.cell_highlight {
-	background-color: #FFFFC0;
 }
 .cell_selected {
 	background-color: #404040;

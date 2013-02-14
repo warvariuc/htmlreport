@@ -4,10 +4,6 @@ function last(array) {
 	return array[array.length - 1];
 }
 
-function stub(e) {
-	return false;
-}
-
 function isInteger(n) {
 	return n === +n && n === (n | 0);
 }
@@ -29,26 +25,64 @@ $(function() {
 	// cursor keys only in keydown
 	// $(document).on("keydown", keypress);
 	// disable selection on the page
-	$(document).on("selectstart", stub);
+	$(document).on("selectstart", false);
 
-	$(document).on("mousedown", "#table>tbody>tr>td", function(e) {
+	$(document).on("dblclick", "#table > tbody > tr > td.cell", function(e) {
+		if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
+			// need left button without keyboard modifiers
+			return;
+		// reset_selection();
+		var editedCell = this;
+		$("#cell_editor").dialog({
+			resizable : true,
+			autoOpen : true,
+			modal : true,
+			// width : 400,
+			// height : 400,
+			open : function () {
+				var htmlEditor = CKEDITOR.replace('html_editor', {
+					toolbar : [['Source', '-', 'Bold', 'Italic']],
+					resize_enabled : false,
+					removePlugins : 'elementspath',
+					enterMode : CKEDITOR.ENTER_BR,
+				});
+				htmlEditor.setData(editedCell.innerHTML);
+				htmlEditor.focus();
+			},
+			close : function () {
+				CKEDITOR.instances.html_editor.destroy();
+			},
+			buttons : {
+				'Ok' : function() {
+					editedCell.innerHTML = CKEDITOR.instances.html_editor.getData();
+					
+					$(this).dialog('close');
+				},
+				'Cancel' : function() {
+					// CKEDITOR.instances.html_editor.destroy();
+					$(this).dialog('close');
+				}
+			}
+
+		});
+	});
+
+	$(document).on("mousedown", "#table > tbody > tr > td", function(e) {
 		if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
 			// need left button without keyboard modifiers
 			return;
 		sys.isMouseDown = true;
 		sys.selectionStart = this;
 		on_mouse_over_cell(this);
-		// $(document).on("mousedown", stub);
 	});
 
-	$(document).on("mouseup", "#table>tbody>tr>td", function(e) {
+	$(document).on("mouseup", "#table > tbody > tr > td", function(e) {
 		if (!sys.isMouseDown)
 			return;
-		// $(document).off("mousedown", stub);
 		sys.isMouseDown = false;
 	});
 
-	$(document).on("mouseover", "#table>tbody>tr>td", function(e) {
+	$(document).on("mouseover", "#table > tbody > tr > td", function(e) {
 		// $("#status_bar").text('' + this.parentNode.rowIndex + ', ' + this.cellIndex);
 		on_mouse_over_cell(this);
 	});
@@ -178,7 +212,7 @@ $(function() {
 
 
 	$.contextMenu({
-		selector : '#table>tbody>tr>td.cell_selected',
+		selector : '#table > tbody > tr > td.cell_selected',
 		build : function($trigger, e) {
 			if (sys.selectionHasMergedCells)
 				return {
@@ -202,7 +236,7 @@ $(function() {
 	});
 
 	$.contextMenu({
-		selector : '#table>tbody>tr>td.colheader',
+		selector : '#table > tbody > tr > td.colheader',
 		build : function($trigger, e) {
 			var el = $trigger[0];
 			if (!sys.selectionStart)
@@ -231,7 +265,7 @@ $(function() {
 	});
 
 	$.contextMenu({
-		selector : '#table>tbody>tr>td.rowheader',
+		selector : '#table > tbody > tr > td.rowheader',
 		build : function($trigger, e) {
 			var el = $trigger[0];
 			if (!sys.selectionStart)
@@ -259,7 +293,7 @@ $(function() {
 		}
 	});
 
-	$(document).on("mousedown", "#table>tbody>tr>td.colheader,#table>tbody>tr>td.rowheader", function(e) {
+	$(document).on("mousedown", "#table > tbody > tr > td.colheader, #table > tbody > tr > td.rowheader", function(e) {
 		if (!e.shiftKey)
 			return;
 		sys.draggingStart = $(this);
@@ -271,7 +305,7 @@ $(function() {
 
 	$(document).on("mousemove", function(e) {
 		if (sys.draggingStart) {
-			if (sys.draggingStart.classList.contains("colheader"))
+			if (sys.draggingStart.hasClass("colheader"))
 				sys.draggingStart.width(sys.draggingStart.data("startWidth") + (e.pageX - sys.draggingStart.data("startX")));
 			else
 				sys.draggingStart.height(sys.draggingStart.data("startHeight") + (e.pageY - sys.draggingStart.data("startY")));

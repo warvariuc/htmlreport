@@ -246,10 +246,7 @@ var // currently active contextMenu trigger
                     // abort if there are no items to display
                     if (!e.data.items || $.isEmptyObject(e.data.items)) {
                         // Note: jQuery captures and ignores errors from event handlers
-                        if (window.console) {
-                            (console.error || console.log)("No items specified to show in contextMenu");
-                        }
-                        
+                        console.log("No items specified to show in contextMenu");
                         throw new Error('No Items sepcified');
                     }
                     
