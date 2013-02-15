@@ -24,6 +24,7 @@ $(function() {
 	table = document.getElementById('table');
 	// cursor keys only in keydown
 	// $(document).on("keydown", keypress);
+	// $(".ui-dialog-content").css("padding", 0);
 	// disable selection on the page
 	$(document).on("selectstart", false);
 
@@ -34,12 +35,13 @@ $(function() {
 		// reset_selection();
 		var editedCell = this;
 		$("#cell_editor").dialog({
+			title : "Edit cell content",
 			resizable : true,
 			autoOpen : true,
 			modal : true,
 			// width : 400,
 			// height : 400,
-			open : function () {
+			open : function() {
 				var htmlEditor = CKEDITOR.replace('html_editor', {
 					toolbar : [['Source', '-', 'Bold', 'Italic']],
 					resize_enabled : false,
@@ -49,21 +51,18 @@ $(function() {
 				htmlEditor.setData(editedCell.innerHTML);
 				htmlEditor.focus();
 			},
-			close : function () {
+			close : function() {
 				CKEDITOR.instances.html_editor.destroy();
 			},
 			buttons : {
 				'Ok' : function() {
 					editedCell.innerHTML = CKEDITOR.instances.html_editor.getData();
-					
 					$(this).dialog('close');
 				},
 				'Cancel' : function() {
-					// CKEDITOR.instances.html_editor.destroy();
 					$(this).dialog('close');
 				}
-			}
-
+			},
 		});
 	});
 
@@ -71,6 +70,7 @@ $(function() {
 		if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
 			// need left button without keyboard modifiers
 			return;
+		reset_selection();
 		sys.isMouseDown = true;
 		sys.selectionStart = this;
 		on_mouse_over_cell(this);
@@ -232,6 +232,7 @@ $(function() {
 						},
 					}
 				}
+			return false;
 		}
 	});
 
