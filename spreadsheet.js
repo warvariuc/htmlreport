@@ -32,41 +32,7 @@ $(function() {
 		if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
 			// need left button without keyboard modifiers
 			return;
-		// reset_selection();
-		var editedCell = this;
-		$("#cell_editor").dialog({
-			title : "Edit cell content",
-			resizable : true,
-			autoOpen : true,
-			modal : true,
-			width : 400,
-			// height : 400,
-			open : function() {
-				var htmlEditor = CKEDITOR.replace('html_editor', {
-					toolbar : [['Source', '-', 'Bold', 'Italic']],
-					resize_enabled : false,
-					removePlugins : 'elementspath',
-					enterMode : CKEDITOR.ENTER_BR,
-					startupFocus : true,
-				});
-				htmlEditor.setData(editedCell.innerHTML);
-				$('#cell_editor .vert_alignment').val('middle');
-				// $('#cell_editor .vert_alignment').prop('selectedIndex', -1);
-				// $('#cell_editor .horiz_alignment').prop('selectedIndex', -1);
-			},
-			close : function() {
-				CKEDITOR.instances.html_editor.destroy();
-			},
-			buttons : {
-				'Ok' : function() {
-					editedCell.innerHTML = CKEDITOR.instances.html_editor.getData();
-					$(this).dialog('close');
-				},
-				'Cancel' : function() {
-					$(this).dialog('close');
-				}
-			},
-		});
+		formatSelection();
 	});
 
 	$(document).on("mousedown", "#table > tbody > tr > td", function(e) {
@@ -245,8 +211,7 @@ $(function() {
 			};
 			items['formatSelectedCells'] = {
 				'name' : "Format...",
-				'callback' : function() {
-				},
+				'callback' : formatSelection,
 			};
 
 			return {
@@ -263,8 +228,7 @@ $(function() {
 				set_selection(el, el);
 			else {
 				if (sys.selectionStart.classList.contains('colheader')) {
-					var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
-					if (el.cellIndex < _.c1 || el.cellIndex > _.c2)
+					if (el.cellIndex < sys.c1 || el.cellIndex > sys.c2)
 						set_selection(el, el);
 				} else
 					set_selection(el, el);
@@ -291,8 +255,7 @@ $(function() {
 				set_selection(el, el);
 			else {
 				if (sys.selectionStart.classList.contains('rowheader')) {
-					var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
-					if (el.parentNode.rowIndex < _.r1 || el.parentNode.rowIndex > _.r2)
+					if (el.parentNode.rowIndex < sys.r1 || el.parentNode.rowIndex > sys.r2)
 						set_selection(el, el);
 				} else
 					set_selection(el, el);
@@ -347,6 +310,80 @@ $(function() {
 	}
 
 });
+
+function formatSelection() {
+	var cell = table.rows[sys.r1].cells[sys.c1];
+	var content = cell.innerHTML;
+	var vertAlign = cell.style.verticalAlign;
+	var horizAlign = cell.style.textAlign;
+	for (var r = sys.r1; r <= sys.r2; r++) {
+		for (var c = sys.c1; c <= sys.c2; c++) {
+			var cell = table.rows[r].cells[c];
+			if (cell.classList.contains('hidden_cell'))
+				continue;
+			if (content !== cell.innerHTML && content !== undefined)
+				content = undefined;
+			if (vertAlign !== cell.style.verticalAlign && vertAlign !== undefined)
+				vertAlign = undefined;
+			if (horizAlign !== cell.style.textAlign && horizAlign !== undefined)
+				horizAlign = undefined;
+		}
+	}
+	var htmlEditor;
+	$("#cell_editor").dialog({
+		title : "Format cells",
+		resizable : true,
+		autoOpen : true,
+		modal : true,
+		// width : 400,
+		// height : 400,
+		open : function() {
+			htmlEditor = CKEDITOR.replace('html_editor', {
+				toolbar : [['Undo', 'Redo', '-', 'Bold', 'Italic', 'Source']],
+				resize_enabled : false,
+				removePlugins : 'elementspath',
+				enterMode : CKEDITOR.ENTER_BR,
+				startupFocus : true,
+			});
+			htmlEditor.setData(content || '');
+			if (vertAlign === undefined)
+				$('#cell_editor .vert_alignment').prop('selectedIndex', -1);
+			else
+				$('#cell_editor .vert_alignment').val(vertAlign);
+			if (horizAlign === undefined)
+				$('#cell_editor .horiz_alignment').prop('selectedIndex', -1);
+			else
+				$('#cell_editor .horiz_alignment').val(horizAlign);
+		},
+		close : function() {
+			CKEDITOR.instances.html_editor.destroy();
+		},
+		buttons : {
+			'Ok' : function() {
+				for (var r = sys.r1; r <= sys.r2; r++) {
+					for (var c = sys.c1; c <= sys.c2; c++) {
+						var cell = table.rows[r].cells[c];
+						if (cell.classList.contains('hidden_cell'))
+							continue;
+						if (htmlEditor.checkDirty())
+							cell.innerHTML = htmlEditor.getData();
+						var vertAlign = $('#cell_editor .vert_alignment').val();
+						if (vertAlign !== null)
+							cell.style.verticalAlign = vertAlign;
+						var horizAlign = $('#cell_editor .horiz_alignment').val();
+						if (horizAlign !== null)
+						cell.style.textAlign = horizAlign;
+					}
+				}
+				$(this).dialog('close');
+			},
+			'Cancel' : function() {
+				$(this).dialog('close');
+			}
+		},
+	});
+
+}
 
 var newCell = '<td class="cell">&nbsp;</td>';
 var newColGroup = '<td class="colgroup">&nbsp;</td>';
