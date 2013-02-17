@@ -13,7 +13,6 @@
 		<script type="text/javascript" src="sprintf.js"></script>
 
 		<script src="ckeditor/ckeditor.js"></script>
-		<script src="ckeditor/skins/moono/skin.js"></script>
 		<link rel="stylesheet" type="text/css" href="jquery.contextMenu.css" />
 
 		<link rel="stylesheet" type="text/css" href="spreadsheet.css" media="all" />
@@ -23,25 +22,49 @@
 		<table id="table" class="resizable">
 			<tbody>
 				<tr>
-					<td class="colgroup" colspan="2" rowspan="2">&nbsp;</td>
-					<td class="hidden_cell"></td>
+					<td class="borderless">&nbsp;</td>
+					<td class="borderless">&nbsp;</td>
 					<td class="colgroup" colspan="1">&nbsp;</td>
 				</tr>
 				<tr>
-					<td class="hidden_cell"></td>
-					<td class="hidden_cell"></td>
-					<td class="colheader">1</td>
+					<td class="borderless">&nbsp;</td>
+					<td class="corner">&nbsp;</td>
+					<td class="colheader" style="width: 50px">1</td>
 				</tr>
 				<tr>
 					<td class="rowgroup">&nbsp;</td>
-					<td class="rowheader">1</td>
+					<td class="rowheader" style="height: 20px">1</td>
 					<td class="cell">&nbsp;</td>
 				</tr>
 			</tbody>
 		</table>
-		<div id="status_bar"></div>
-		<div id="cell_editor" style="display: none">
-			<div id="html_editor"> </div>
+		<div id="status_bar">
+			&nbsp;
 		</div>
+		<table id="cell_editor">
+			<tr>
+				<td colspan="2">				<textarea id="html_editor">&nbsp;</textarea></td>
+			</tr>
+			<tr>
+				<td align="right">Horizontal alignment</td>
+				<td>
+				<select class="horiz_alignment">
+					<option value="left">Left</option>
+					<option value="right">Right</option>
+					<option value="center">Center</option>
+					<option value="justify">Justify</option>
+					<option value="inherit">Default</option>
+				</select></td>
+			</tr>
+			<tr>
+				<td align="right">Vertical alignment</td>
+				<td>
+				<select  class="vert_alignment">
+					<option value="top">Top</option>
+					<option value="middle">Middle</option>
+					<option value="bottom">Bottom</option>
+				</select></td>
+			</tr>
+		</table>
 	</body>
 </html>

@@ -39,7 +39,7 @@ $(function() {
 			resizable : true,
 			autoOpen : true,
 			modal : true,
-			// width : 400,
+			width : 400,
 			// height : 400,
 			open : function() {
 				var htmlEditor = CKEDITOR.replace('html_editor', {
@@ -47,9 +47,12 @@ $(function() {
 					resize_enabled : false,
 					removePlugins : 'elementspath',
 					enterMode : CKEDITOR.ENTER_BR,
+					startupFocus : true,
 				});
 				htmlEditor.setData(editedCell.innerHTML);
-				htmlEditor.focus();
+				$('#cell_editor .vert_alignment').val('middle');
+				// $('#cell_editor .vert_alignment').prop('selectedIndex', -1);
+				// $('#cell_editor .horiz_alignment').prop('selectedIndex', -1);
 			},
 			close : function() {
 				CKEDITOR.instances.html_editor.destroy();
@@ -180,24 +183,23 @@ $(function() {
 		}
 	}
 
-	function merge_selection() {
-		var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
-		for (var r = _.r1; r <= _.r2; r++) {
-			for (var c = _.c1; c <= _.c2; c++) {
-				if (r == _.r1 && c == _.c1)
+	function mergeSelectedCells() {
+		for (var r = sys.r1; r <= sys.r2; r++) {
+			for (var c = sys.c1; c <= sys.c2; c++) {
+				if (r == sys.r1 && c == sys.c1)
 					continue;
 				var cell = table.rows[r].cells[c];
 				cell.classList.add('hidden_cell');
-				cell.setAttribute('data-merged', [_.r1, _.c1].join(','));
+				cell.setAttribute('data-merged', [sys.r1, sys.c1].join(','));
 			}
 		}
-		var cell = table.rows[_.r1].cells[_.c1];
-		cell.colSpan = _.c2 - _.c1 + 1;
-		cell.rowSpan = _.r2 - _.r1 + 1;
+		var cell = table.rows[sys.r1].cells[sys.c1];
+		cell.colSpan = sys.c2 - sys.c1 + 1;
+		cell.rowSpan = sys.r2 - sys.r1 + 1;
 		sys.selectionHasMergedCells = true;
 	}
 
-	function split_selection() {
+	function splitSelectedCells() {
 		for (var r = sys.r1; r <= sys.r2; r++) {
 			for (var c = sys.c1; c <= sys.c2; c++) {
 				var cell = table.rows[r].cells[c];
@@ -210,29 +212,46 @@ $(function() {
 		sys.selectionHasMergedCells = false;
 	}
 
+	function clearSelectionContents() {
+		for (var r = sys.r1; r <= sys.r2; r++) {
+			for (var c = sys.c1; c <= sys.c2; c++) {
+				var cell = table.rows[r].cells[c];
+				cell.innerHTML = '';
+			}
+		}
+	}
+
 
 	$.contextMenu({
 		selector : '#table > tbody > tr > td.cell_selected',
 		build : function($trigger, e) {
+			var items = {};
 			if (sys.selectionHasMergedCells)
-				return {
-					items : {
-						split_cells : {
-							name : "Split merged cells in the selection",
-							callback : split_selection,
-						},
-					}
-				}
+				items['split_cells'] = {
+					'name' : "Split merged cells",
+					'callback' : splitSelectedCells,
+					'icon' : 'split_cell',
+				};
 			else if (sys.selectionStart !== sys.selectionEnd)
-				return {
-					items : {
-						merge_selection : {
-							name : "Merge selected cells",
-							callback : merge_selection,
-						},
-					}
-				}
-			return false;
+				items['mergeSelectedCells'] = {
+					'name' : "Merge selected cells",
+					'callback' : mergeSelectedCells,
+					'icon' : 'merge_cells',
+				};
+			items['clear_contents'] = {
+				'name' : "Clear contents",
+				'callback' : clearSelectionContents,
+				'icon' : 'clear_cell_contents',
+			};
+			items['formatSelectedCells'] = {
+				'name' : "Format...",
+				'callback' : function() {
+				},
+			};
+
+			return {
+				'items' : items
+			}
 		}
 	});
 
@@ -255,9 +274,8 @@ $(function() {
 					insert_columns : {
 						name : "Insert columns",
 						callback : function(e) {
-							var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
-							reset_selection();
-							addColumns(_.c2 - _.c1 + 1, _.c1);
+							addColumns(sys.c2 - sys.c1 + 1, sys.c1 - 2);
+							set_selection(sys.selectionStart, sys.selectionEnd);
 						}
 					},
 				}
@@ -284,9 +302,8 @@ $(function() {
 					insert_rows : {
 						name : "Insert rows",
 						callback : function(e) {
-							var _ = normalize_selection(sys.selectionStart, sys.selectionEnd);
-							reset_selection();
-							addRows(_.r2 - _.r1 + 1, _.r1);
+							addRows(sys.r2 - sys.r1 + 1, sys.r1 - 2);
+							set_selection(sys.selectionStart, sys.selectionEnd);
 						}
 					},
 				}
@@ -321,21 +338,29 @@ $(function() {
 
 	addColumns(10);
 	addRows(10);
+	for (var r = 2; r < table.rows.length; r++) {
+		var row = table.rows[r];
+		for (var c = 2; c < row.cells.length; c++) {
+			var cell = row.cells[c];
+			cell.innerHTML = sprintf('%d x %d', r - 1, c - 1);
+		}
+	}
+
 });
 
-var newCell = '<td class="cell">#</td>';
+var newCell = '<td class="cell">&nbsp;</td>';
 var newColGroup = '<td class="colgroup">&nbsp;</td>';
-var newColHeader = '<td class="colheader">1</td>';
 var newRowGroup = '<td class="rowgroup">&nbsp;</td>';
-var newRowHeader = '<td class="rowheader">1</td>';
+var newColHeader = '<td class="colheader" style="width: 50px">1</td>';
+var newRowHeader = '<td class="rowheader" style="height: 20px">1</td>';
 
-function addRows(count, index) {
+function addRows(count, rowNo) {
 	// index doesn't count group and header columns
 	count = count || 1;
-	index = (index === undefined) ? -1 : index + 2;
+	rowNo = (rowNo === undefined) ? table.rows.length : rowNo + 2;
 	var colCount = table.rows[0].cells.length;
 	for (var i = 0; i < count; i++) {
-		var row = table.insertRow(index)
+		var row = table.insertRow(rowNo)
 		var td = row.insertCell(-1)
 		td.outerHTML = newRowGroup
 		td = row.insertCell(-1)
@@ -347,20 +372,31 @@ function addRows(count, index) {
 	}
 	// update numbering
 	var rowCount = table.rows.length;
-	if (index == -1)
-		index = rowCount - count;
-	for (; index < rowCount; index++)
-		table.rows[index].cells[1].innerHTML = index - 1;
+	for (var _rowNo = rowNo; _rowNo < rowCount; _rowNo++) {
+		// set row number
+		table.rows[_rowNo].cells[1].innerHTML = _rowNo - 1;
+		for (var _colNo = 2; _colNo < colCount; _colNo++) {
+			var cell = table.rows[_rowNo].cells[_colNo];
+			var merged = cell.getAttribute('data-merged');
+			if (merged) {
+				var _ = merged.split(',');
+				var r = parseInt(_[0]);
+				var c = parseInt(_[1]);
+				cell.setAttribute('data-merged', [r + count, c].join(','));
+			}
+		}
+
+	}
 }
 
-function addColumns(count, index) {
+function addColumns(count, colNo) {
 	count = count || 1;
-	index = (index === undefined) ? -1 : index + 2;
+	colNo = (colNo === undefined) ? table.rows[0].cells.length : colNo + 2;
 	var rowCount = table.rows.length;
 	for (var i = 0; i < count; i++)
 		for (var rowNo = 0; rowNo < rowCount; rowNo++) {
 			var row = table.rows[rowNo];
-			var td = row.insertCell(index);
+			var td = row.insertCell(colNo);
 			if (rowNo == 0)
 				td.outerHTML = newColGroup
 			else if (rowNo == 1)
@@ -370,9 +406,18 @@ function addColumns(count, index) {
 		}
 	// update numbering
 	var colCount = table.rows[0].cells.length;
-	if (index == -1)
-		index = colCount - count;
-	for (; index < colCount; index++) {
-		table.rows[1].cells[index].innerHTML = index - 1;
+	for (var _colNo = colNo; _colNo < colCount; _colNo++) {
+		// set column number in the header
+		table.rows[1].cells[_colNo].innerHTML = _colNo - 1;
+		for (var _rowNo = 2; _rowNo < rowCount; _rowNo++) {
+			var cell = table.rows[_rowNo].cells[_colNo];
+			var merged = cell.getAttribute('data-merged');
+			if (merged) {
+				var _ = merged.split(',');
+				var r = parseInt(_[0]);
+				var c = parseInt(_[1]);
+				cell.setAttribute('data-merged', [r, c + count].join(','));
+			}
+		}
 	}
 }
