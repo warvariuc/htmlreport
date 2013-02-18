@@ -29,7 +29,7 @@ body, input, textarea, div, table {
 td.borderless {
 	border: 0px;
 }
-td.hidden_cell {
+td.merged_cell {
 	display: none;
 }
 .corner {

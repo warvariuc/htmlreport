@@ -79,7 +79,7 @@ $(function() {
 						select(r1, c1, _r2, _c2);
 						return;
 					}
-					if (cell.classList.contains('hidden_cell')) {
+					if (cell.classList.contains('merged_cell')) {
 						sys.selectionHasMergedCells = true;
 						var _ = cell.getAttribute('data-merged').split(',');
 						var _r1 = Math.min(parseInt(_[0]), r1);
@@ -97,18 +97,31 @@ $(function() {
 		clear_selection();
 		sys.selectionStart = selectionStart;
 		sys.selectionEnd = selectionEnd;
+
+		if (table.rows.length == 2) {
+			sys.r1 = null;
+			sys.r2 = null;
+			sys.c1 = selectionStart.cellIndex;
+			sys.c2 = selectionEnd.cellIndex;
+			return
+		} else if (table.rows[0].cells.length == 2) {
+			sys.r1 = selectionStart.parentNode.rowIndex;
+			sys.c1 = null;
+			sys.r2 = selectionEnd.parentNode.rowIndex;
+			sys.c2 = null;
+			return
+		}
 		var _ = normalize_selection(selectionStart, selectionEnd);
 		select(Math.max(_.r1, 2), Math.max(_.c1, 2), _.r2, _.c2);
 
 	}
 
 	function clear_selection() {
-		if (sys.r1 === null)
-			return;
-		for (var rowNo = sys.r1; rowNo <= sys.r2; rowNo++) {
-			for (var colNo = sys.c1; colNo <= sys.c2; colNo++)
-				table.rows[rowNo].cells[colNo].classList.remove('cell_selected');
-		}
+		if (sys.r1 !== null && sys.c1 !== null)
+			for (var rowNo = sys.r1; rowNo <= sys.r2; rowNo++) {
+				for (var colNo = sys.c1; colNo <= sys.c2; colNo++)
+					table.rows[rowNo].cells[colNo].classList.remove('cell_selected');
+			}
 		sys.r1 = null;
 		sys.c1 = null;
 		sys.r2 = null;
@@ -155,7 +168,7 @@ $(function() {
 				if (r == sys.r1 && c == sys.c1)
 					continue;
 				var cell = table.rows[r].cells[c];
-				cell.classList.add('hidden_cell');
+				cell.classList.add('merged_cell');
 				cell.setAttribute('data-merged', [sys.r1, sys.c1].join(','));
 			}
 		}
@@ -169,7 +182,7 @@ $(function() {
 		for (var r = sys.r1; r <= sys.r2; r++) {
 			for (var c = sys.c1; c <= sys.c2; c++) {
 				var cell = table.rows[r].cells[c];
-				cell.classList.remove('hidden_cell');
+				cell.classList.remove('merged_cell');
 				cell.removeAttribute('data-merged');
 				cell.rowSpan = 1;
 				cell.colSpan = 1;
@@ -242,6 +255,14 @@ $(function() {
 							set_selection(sys.selectionStart, sys.selectionEnd);
 						}
 					},
+					remove_columns : {
+						name : "Remove columns",
+						callback : function(e) {
+							removeColumns(sys.c1 - 2, sys.c2 - sys.c1 + 1);
+							sys.r1 = null;
+							reset_selection();
+						}
+					},
 				}
 			}
 		}
@@ -267,6 +288,29 @@ $(function() {
 						callback : function(e) {
 							addRows(sys.r2 - sys.r1 + 1, sys.r1 - 2);
 							set_selection(sys.selectionStart, sys.selectionEnd);
+						}
+					},
+				}
+			}
+		}
+	});
+
+	$.contextMenu({
+		selector : '#table > tbody > tr > td.corner',
+		build : function($trigger, e) {
+			var el = $trigger[0];
+			return {
+				items : {
+					add_column : {
+						name : "Add a column",
+						callback : function(e) {
+							addColumns();
+						}
+					},
+					add_row : {
+						name : "Add a row",
+						callback : function(e) {
+							addRows();
 						}
 					},
 				}
@@ -319,7 +363,7 @@ function formatSelection() {
 	for (var r = sys.r1; r <= sys.r2; r++) {
 		for (var c = sys.c1; c <= sys.c2; c++) {
 			var cell = table.rows[r].cells[c];
-			if (cell.classList.contains('hidden_cell'))
+			if (cell.classList.contains('merged_cell'))
 				continue;
 			if (content !== cell.innerHTML && content !== undefined)
 				content = undefined;
@@ -363,7 +407,7 @@ function formatSelection() {
 				for (var r = sys.r1; r <= sys.r2; r++) {
 					for (var c = sys.c1; c <= sys.c2; c++) {
 						var cell = table.rows[r].cells[c];
-						if (cell.classList.contains('hidden_cell'))
+						if (cell.classList.contains('merged_cell'))
 							continue;
 						if (htmlEditor.checkDirty())
 							cell.innerHTML = htmlEditor.getData();
@@ -372,7 +416,7 @@ function formatSelection() {
 							cell.style.verticalAlign = vertAlign;
 						var horizAlign = $('#cell_editor .horiz_alignment').val();
 						if (horizAlign !== null)
-						cell.style.textAlign = horizAlign;
+							cell.style.textAlign = horizAlign;
 					}
 				}
 				$(this).dialog('close');
@@ -407,23 +451,7 @@ function addRows(count, rowNo) {
 			td.outerHTML = newCell
 		}
 	}
-	// update numbering
-	var rowCount = table.rows.length;
-	for (var _rowNo = rowNo; _rowNo < rowCount; _rowNo++) {
-		// set row number
-		table.rows[_rowNo].cells[1].innerHTML = _rowNo - 1;
-		for (var _colNo = 2; _colNo < colCount; _colNo++) {
-			var cell = table.rows[_rowNo].cells[_colNo];
-			var merged = cell.getAttribute('data-merged');
-			if (merged) {
-				var _ = merged.split(',');
-				var r = parseInt(_[0]);
-				var c = parseInt(_[1]);
-				cell.setAttribute('data-merged', [r + count, c].join(','));
-			}
-		}
-
-	}
+	updateNumbering(rowNo, count, 0, 0);
 }
 
 function addColumns(count, colNo) {
@@ -441,20 +469,40 @@ function addColumns(count, colNo) {
 			else
 				td.outerHTML = newCell
 		}
-	// update numbering
+	updateNumbering(0, 0, colNo, count);
+}
+
+function updateNumbering(rowNo, rowShift, colNo, colShift) {
+	// update numbering and merged cells info
+	var rowCount = table.rows.length;
 	var colCount = table.rows[0].cells.length;
-	for (var _colNo = colNo; _colNo < colCount; _colNo++) {
-		// set column number in the header
-		table.rows[1].cells[_colNo].innerHTML = _colNo - 1;
-		for (var _rowNo = 2; _rowNo < rowCount; _rowNo++) {
-			var cell = table.rows[_rowNo].cells[_colNo];
+	for (var _rowNo = rowNo; _rowNo < rowCount; _rowNo++) {
+		// set row number
+		var rowCells = table.rows[_rowNo].cells;
+		if (_rowNo > 1)
+			rowCells[1].innerHTML = _rowNo - 1;
+		for (var _colNo = colNo; _colNo < colCount; _colNo++) {
+			if (_colNo > 1 && _rowNo == 1)
+				rowCells[_colNo].innerHTML = _colNo - 1;
+			var cell = rowCells[_colNo];
 			var merged = cell.getAttribute('data-merged');
 			if (merged) {
 				var _ = merged.split(',');
 				var r = parseInt(_[0]);
 				var c = parseInt(_[1]);
-				cell.setAttribute('data-merged', [r, c + count].join(','));
+				cell.setAttribute('data-merged', [r + rowShift, c + colShift].join(','));
 			}
 		}
 	}
+}
+
+function removeColumns(colNo, count) {
+	colNo += 2;
+	count = count || 1;
+	var rowCount = table.rows.length;
+	for (var rowNo = 0; rowNo < rowCount; rowNo++) {
+		for (var i = 0; i < count; i++)
+			table.rows[rowNo].deleteCell(colNo);
+	}
+	updateNumbering(0, 0, colNo, count);
 }
