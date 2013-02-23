@@ -19,36 +19,39 @@
 		<script type="text/javascript" src="spreadsheet.js"></script>
 	</head>
 	<body>
-		<table id="table" class="resizable">
+		<table id="table">
 			<tbody>
 				<tr>
-					<td class="borderless">&nbsp;</td>
-					<td class="borderless">&nbsp;</td>
-					<td class="colgroup" colspan="1">&nbsp;</td>
+					<td class="borderless"></td>
+					<td class="borderless"></td>
+					<td class="col-section" colspan="1"></td>
 				</tr>
 				<tr>
-					<td class="borderless">&nbsp;</td>
-					<td class="corner">&nbsp;</td>
-					<td class="colheader" style="width: 50px">1</td>
+					<td class="borderless"></td>
+					<td class="corner"></td>
+					<td class="colheader">1</td>
 				</tr>
 				<tr>
-					<td class="rowgroup">&nbsp;</td>
-					<td class="rowheader" style="height: 20px">1</td>
-					<td class="cell">&nbsp;</td>
+					<td class="row-section"></td>
+					<td class="rowheader">1</td>
+					<td class="cell"></td>
 				</tr>
 			</tbody>
 		</table>
 		<div id="status_bar">
 			&nbsp;
 		</div>
-		<table id="cell_editor">
+
+		<table id="cell_editor" class="dialog-editor">
 			<tr>
-				<td colspan="2">				<textarea id="html_editor">&nbsp;</textarea></td>
+				<td colspan="2">
+					<textarea name="html_editor">&nbsp;</textarea>
+				</td>
 			</tr>
 			<tr>
 				<td align="right">Horizontal alignment</td>
 				<td>
-				<select class="horiz_alignment">
+				<select name="horiz_alignment">
 					<option value="left">Left</option>
 					<option value="right">Right</option>
 					<option value="center">Center</option>
@@ -59,12 +62,21 @@
 			<tr>
 				<td align="right">Vertical alignment</td>
 				<td>
-				<select  class="vert_alignment">
+				<select name="vert_alignment">
 					<option value="top">Top</option>
 					<option value="middle">Middle</option>
 					<option value="bottom">Bottom</option>
 					<option value="">Default</option>
 				</select></td>
+			</tr>
+		</table>
+
+		<table id="section_editor" class="dialog-editor">
+			<tr>
+				<td align="right">Section identifier</td>
+				<td>
+				<input type="text" name="section_id">
+				</td>
 			</tr>
 		</table>
 	</body>

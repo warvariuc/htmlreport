@@ -29,7 +29,7 @@ body, input, textarea, div, table {
 td.borderless {
 	border: 0px;
 }
-td.merged_cell {
+td.merged-cell {
 	display: none;
 }
 .corner {
@@ -40,16 +40,19 @@ td.merged_cell {
 	color: #808080;
 	background-color: #EFEFEF;
 	border: 1px solid #666666;
+	width: 50px;
+	text-align: center;
 }
 .rowheader {
 	color: #808080;
 	background-color: #EFEFEF;
 	border: 1px solid #666666;
 	text-align: right;
-	vertical-align: top;
+	vertical-align: middle;
 	width: 25px;
+	height: 20px;
 }
-.rowgroup {
+.row-section {
 	/*display: none;*/
 	color: #666666;
 	background-color: #FFFFFF;
@@ -59,7 +62,7 @@ td.merged_cell {
 	padding-right: 5px;
 	width: 15px;
 }
-.colgroup {
+.col-section {
 	/*display: none;*/
 	color: #666666;
 	background-color: #FFFFFF;
@@ -69,6 +72,14 @@ td.merged_cell {
 	padding-right: 5px;
 	height: 20px;
 }
+.vert-section {
+	/*display: none;*/
+	text-align: center;
+	color: black;
+	background-color: #FFFFFF;
+	border-right: 1px solid black;
+	border-left: 1px solid black;
+}
 #status_bar {
 	position: fixed;
 	bottom: 0;
@@ -76,7 +87,7 @@ td.merged_cell {
 	border: 1px solid silver;
 	background: #aaaaaa;
 }
-.cell_selected {
+.cell-selected {
 	background-color: #404040;
 	color: #FFFFFF
 }
@@ -91,7 +102,7 @@ td.merged_cell {
 .context-menu-item.icon-clear_cell_contents {
 	background-image: url('images/clear_cell_contents.png');
 }
-#cell_editor {
+.dialog-editor {
 	display: none;
 	padding: 2px;
 	border: 0;

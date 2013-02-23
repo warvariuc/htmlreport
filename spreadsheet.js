@@ -40,6 +40,12 @@ $(function() {
 
 $(document).on("selectstart", false);
 
+// make pressing Enter in a dialog as submit
+$(document).on("keyup", ".ui-dialog", function(e) {
+	if (e.keyCode === $.ui.keyCode.ENTER)
+		$(".ui-dialog-buttonpane button:contains('Ok')").first().click()
+});
+
 $(document).on("dblclick", "#table > tbody > tr > td.cell", function(e) {
 	if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
 		// need left button without keyboard modifiers
@@ -91,17 +97,24 @@ function set_selection(selectionStart, selectionEnd) {
 					select(r1, c1, _r2, _c2);
 					return;
 				}
-				if (cell.classList.contains('merged_cell')) {
+				if (cell.classList.contains('merged-cell')) {
 					sys.selectionHasMergedCells = true;
-					var _ = cell.getAttribute('data-merged').split(',');
-					var _r1 = Math.min(parseInt(_[0]), r1);
-					var _c1 = Math.min(parseInt(_[1]), c1);
+					var merged = getMergeData(cell);
+					var _r1 = Math.min(merged.r, r1);
+					var _c1 = Math.min(merged.c, c1);
 					if (_r1 < r1 || _c1 < c1) {
 						select(_r1, _c1, r2, c2);
 						return;
 					}
+					// var _ = cell.getAttribute('data-merge').split(',');
+					// var _r1 = Math.min(parseInt(_[0]), r1);
+					// var _c1 = Math.min(parseInt(_[1]), c1);
+					// if (_r1 < r1 || _c1 < c1) {
+					// select(_r1, _c1, r2, c2);
+					// return;
+					// }
 				}
-				cell.classList.add('cell_selected');
+				cell.classList.add('cell-selected');
 			}
 		}
 	}
@@ -129,7 +142,7 @@ function clear_selection() {
 		var cells = table.rows[rowNo].cells;
 		var colCount = cells.length;
 		for (var colNo = 0; colNo < colCount; colNo++)
-			cells[colNo].classList.remove('cell_selected');
+			cells[colNo].classList.remove('cell-selected');
 	}
 	sys.r1 = null;
 	sys.c1 = null;
@@ -171,28 +184,28 @@ function normalize_selection(selectionStart, selectionEnd) {
 	}
 }
 
-function mergeSelectedCells() {
-	for (var r = sys.r1; r <= sys.r2; r++) {
-		for (var c = sys.c1; c <= sys.c2; c++) {
-			if (r == sys.r1 && c == sys.c1)
+function mergeCells(_sys) {
+	for (var r = _sys.r1; r <= _sys.r2; r++) {
+		for (var c = _sys.c1; c <= _sys.c2; c++) {
+			if (r == _sys.r1 && c == _sys.c1)
 				continue;
 			var cell = table.rows[r].cells[c];
-			cell.classList.add('merged_cell');
-			cell.setAttribute('data-merged', [sys.r1, sys.c1].join(','));
+			cell.classList.add('merged-cell');
+			cell.setAttribute('data-merge', [r - _sys.r1, c - _sys.c1].join(','));
 		}
 	}
-	var cell = table.rows[sys.r1].cells[sys.c1];
-	cell.colSpan = sys.c2 - sys.c1 + 1;
-	cell.rowSpan = sys.r2 - sys.r1 + 1;
-	sys.selectionHasMergedCells = true;
+	var cell = table.rows[_sys.r1].cells[_sys.c1];
+	cell.colSpan = _sys.c2 - _sys.c1 + 1;
+	cell.rowSpan = _sys.r2 - _sys.r1 + 1;
+	_sys.selectionHasMergedCells = true;
 }
 
 function splitSelectedCells() {
 	for (var r = sys.r1; r <= sys.r2; r++) {
 		for (var c = sys.c1; c <= sys.c2; c++) {
 			var cell = table.rows[r].cells[c];
-			cell.classList.remove('merged_cell');
-			cell.removeAttribute('data-merged');
+			cell.classList.remove('merged-cell');
+			cell.removeAttribute('data-merge');
 			cell.rowSpan = 1;
 			cell.colSpan = 1;
 		}
@@ -210,7 +223,7 @@ function clearSelectionContents() {
 }
 
 $.contextMenu({
-	selector : '#table > tbody > tr > td.cell_selected',
+	selector : '#table > tbody > tr > td.cell-selected',
 	build : function($trigger, e) {
 		var items = {};
 		if (sys.selectionHasMergedCells)
@@ -220,9 +233,11 @@ $.contextMenu({
 				'icon' : 'split_cell',
 			};
 		else if (sys.selectionStart !== sys.selectionEnd)
-			items['mergeSelectedCells'] = {
+			items['mergeCells'] = {
 				'name' : "Merge selected cells",
-				'callback' : mergeSelectedCells,
+				'callback' : function() {
+					mergeCells(sys)
+				},
 				'icon' : 'merge_cells',
 			};
 		items['clear_contents'] = {
@@ -242,7 +257,7 @@ $.contextMenu({
 });
 
 $(document).on("mousedown", "#table > tbody > tr > td.colheader, #table > tbody > tr > td.rowheader", function(e) {
-	if (!e.shiftKey)
+	if (!e.ctrlKey)
 		return;
 	sys.draggingStart = $(this);
 	sys.draggingStart.data("startX", e.pageX);
@@ -274,7 +289,7 @@ function formatSelection() {
 	for (var r = sys.r1; r <= sys.r2; r++) {
 		for (var c = sys.c1; c <= sys.c2; c++) {
 			var cell = table.rows[r].cells[c];
-			if (cell.classList.contains('merged_cell'))
+			if (cell.classList.contains('merged-cell'))
 				continue;
 			if (content !== cell.innerHTML && content !== undefined)
 				content = undefined;
@@ -293,7 +308,7 @@ function formatSelection() {
 		// width : 400,
 		// height : 400,
 		open : function() {
-			htmlEditor = CKEDITOR.replace('html_editor', {
+			htmlEditor = CKEDITOR.replace($('#cell_editor *[name="html_editor"]')[0], {
 				toolbar : [['Undo', 'Redo', '-', 'Bold', 'Italic', 'Source']],
 				resize_enabled : false,
 				removePlugins : 'elementspath',
@@ -302,13 +317,13 @@ function formatSelection() {
 			});
 			htmlEditor.setData(content || '');
 			if (vertAlign === undefined)
-				$('#cell_editor .vert_alignment').prop('selectedIndex', -1);
+				$('#cell_editor *[name="vert_alignment"]').prop('selectedIndex', -1);
 			else
-				$('#cell_editor .vert_alignment').val(vertAlign);
+				$('#cell_editor *[name="vert_alignment"]').val(vertAlign);
 			if (horizAlign === undefined)
-				$('#cell_editor .horiz_alignment').prop('selectedIndex', -1);
+				$('#cell_editor *[name="horiz_alignment"]').prop('selectedIndex', -1);
 			else
-				$('#cell_editor .horiz_alignment').val(horizAlign);
+				$('#cell_editor *[name="horiz_alignment"]').val(horizAlign);
 		},
 		close : function() {
 			CKEDITOR.instances.html_editor.destroy();
@@ -318,14 +333,14 @@ function formatSelection() {
 				for (var r = sys.r1; r <= sys.r2; r++) {
 					for (var c = sys.c1; c <= sys.c2; c++) {
 						var cell = table.rows[r].cells[c];
-						if (cell.classList.contains('merged_cell'))
+						if (cell.classList.contains('merged-cell'))
 							continue;
 						if (htmlEditor.checkDirty())
 							cell.innerHTML = htmlEditor.getData();
-						var vertAlign = $('#cell_editor .vert_alignment').val();
+						var vertAlign = $('#cell_editor *[name="vert_alignment"]').val();
 						if (vertAlign !== null)
 							cell.style.verticalAlign = vertAlign;
-						var horizAlign = $('#cell_editor .horiz_alignment').val();
+						var horizAlign = $('#cell_editor *[name="horiz_alignment"]').val();
 						if (horizAlign !== null)
 							cell.style.textAlign = horizAlign;
 					}
@@ -341,8 +356,8 @@ function formatSelection() {
 }
 
 var newCell = '<td class="cell">&nbsp;</td>';
-var newColGroup = '<td class="colgroup">&nbsp;</td>';
-var newRowGroup = '<td class="rowgroup">&nbsp;</td>';
+var newColGroup = '<td class="col-section"></td>';
+var newRowGroup = '<td class="row-section"></td>';
 var newColHeader = '<td class="colheader" style="width: 50px">1</td>';
 var newRowHeader = '<td class="rowheader" style="height: 20px">1</td>';
 
@@ -362,7 +377,7 @@ function addRows(count, rowNo) {
 			td.outerHTML = newCell
 		}
 	}
-	updateNumbering(rowNo, count, 0, 0);
+	updateNumbering(rowNo, null);
 }
 
 function addColumns(count, colNo) {
@@ -373,37 +388,71 @@ function addColumns(count, colNo) {
 		for (var rowNo = 0; rowNo < rowCount; rowNo++) {
 			var row = table.rows[rowNo];
 			var td = row.insertCell(colNo);
-			if (rowNo == 0)
+			if (rowNo == 0) {
 				td.outerHTML = newColGroup
-			else if (rowNo == 1)
+				var prevCell = row.cells[colNo + 1];
+				if (prevCell)
+					row.cells[colNo].innerHTML = prevCell.innerHTML;
+			} else if (rowNo == 1)
 				td.outerHTML = newColHeader
 			else
 				td.outerHTML = newCell
 		}
-	updateNumbering(0, 0, colNo, count);
+	updateNumbering(null, colNo);
 }
 
-function updateNumbering(rowNo, rowShift, colNo, colShift) {
-	// update numbering and merged cells info
-	var rowCount = table.rows.length;
-	var colCount = table.rows[0].cells.length;
-	for (var _rowNo = rowNo; _rowNo < rowCount; _rowNo++) {
-		// set row number
-		var rowCells = table.rows[_rowNo].cells;
-		if (_rowNo > 1)
-			rowCells[1].innerHTML = _rowNo - 1;
-		for (var _colNo = colNo; _colNo < colCount; _colNo++) {
-			if (_colNo > 1 && _rowNo == 1)
-				rowCells[_colNo].innerHTML = _colNo - 1;
-			var cell = rowCells[_colNo];
-			var merged = cell.getAttribute('data-merged');
-			if (merged) {
-				var _ = merged.split(',');
-				var r = parseInt(_[0]);
-				var c = parseInt(_[1]);
-				cell.setAttribute('data-merged', [r + rowShift, c + colShift].join(','));
+function updateNumbering(rowNo, colNo) {
+	if (isInteger(rowNo)) {
+		var rowCount = table.rows.length;
+		for (; rowNo < rowCount; rowNo++)
+			table.rows[rowNo].cells[1].innerHTML = rowNo - 1;
+	} else if (isInteger(colNo)) {
+		var headerCells = table.rows[1].cells;
+		var colCount = headerCells.length;
+		for (; colNo < colCount; colNo++)
+			headerCells[colNo].innerHTML = colNo - 1;
+
+		var sectionCells = table.rows[0].cells;
+		var colCount = sectionCells.length;
+		var sectionId = undefined;
+		var sectionSpan = 0;
+		for (var colNo = colCount - 1; colNo >= 1; colNo--) {
+			var cell = sectionCells[colNo];
+			var prevCell = sectionCells[colNo + 1];
+			cell.id = "";
+			var _sectionId = cell.innerHTML;
+			if (_sectionId)
+				cell.classList.add('merged-cell');
+			if (sectionId === _sectionId) {
+				if (_sectionId)
+					sectionSpan++;
+			} else {
+				if (sectionId) {
+					prevCell.classList.remove('merged-cell');
+					prevCell.classList.add('vert-section');
+					prevCell.id = sectionId;
+					prevCell.colSpan = sectionSpan;
+				}
+				sectionSpan = 0;
+				if (_sectionId)
+					sectionSpan++;
+				sectionId = _sectionId;
 			}
-		}
+		};
+
+	}
+}
+
+function getMergeData(cell) {
+	var merged = cell.getAttribute('data-merge');
+	if (merged) {
+		var _ = merged.split(',');
+		var merged = {
+			r : cell.parentNode.rowIndex - parseInt(_[0]),
+			c : cell.cellIndex - parseInt(_[1]),
+		};
+		merged['cell'] = table.rows[merged.r].cells[merged.c];
+		return merged;
 	}
 }
 
@@ -411,12 +460,13 @@ function removeColumns(colNo, count) {
 	colNo += 2;
 	count = count || 1;
 	var rowCount = table.rows.length;
+
 	for (var rowNo = 0; rowNo < rowCount; rowNo++) {
 		var row = table.rows[rowNo];
 		for (var i = 0; i < count; i++)
 			row.deleteCell(colNo);
-	}
-	updateNumbering(0, 0, colNo, -count);
+	};
+	updateNumbering(null, colNo);
 }
 
 function removeRows(rowNo, count) {
@@ -424,7 +474,7 @@ function removeRows(rowNo, count) {
 	count = count || 1;
 	for (var i = 0; i < count; i++)
 		table.deleteRow(rowNo);
-	updateNumbering(rowNo, -count);
+	updateNumbering(rowNo, null);
 }
 
 $.contextMenu({
@@ -463,26 +513,114 @@ $.contextMenu({
 			} else
 				set_selection(el, el);
 		}
-		return {
-			items : {
-				insert_columns : {
-					name : "Insert columns",
-					callback : function(e) {
-						addColumns(sys.c2 - sys.c1 + 1, sys.c1 - 2);
-						set_selection(sys.selectionStart, sys.selectionEnd);
-					}
+		var items = {
+			'insert_columns' : {
+				'name' : "Insert columns",
+				'callback' : function(e) {
+					addColumns(sys.c2 - sys.c1 + 1, sys.c1 - 2);
+					set_selection(sys.selectionStart, sys.selectionEnd);
 				},
-				remove_columns : {
-					name : "Remove columns",
-					callback : function(e) {
-						removeColumns(sys.c1 - 2, sys.c2 - sys.c1 + 1);
-						reset_selection();
-					}
+			},
+			'remove_columns' : {
+				'name' : "Remove columns",
+				'callback' : function(e) {
+					removeColumns(sys.c1 - 2, sys.c2 - sys.c1 + 1);
+					reset_selection();
 				},
+			},
+		};
+		var isOk = true;
+		for (var colNo = sys.c1; colNo <= sys.c2; colNo++) {
+			var cell = table.rows[0].cells[colNo];
+			if (cell.classList.contains('vert-section') || cell.classList.contains('merged-cell')) {
+				isOk = false;
+				break;
 			}
+		}
+		if (isOk)
+			items['create_section'] = {
+				'name' : "Create section",
+				'callback' : function(e) {
+					editSection(sys.c1, sys.c2 - sys.c1 + 1, 1)
+				},
+			};
+		return {
+			'items' : items,
 		}
 	}
 });
+
+$(document).on("dblclick", "#table > tbody > tr > td.vert-section", function(e) {
+	// double click on vertical section id - edit section
+	if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
+		// need left button without keyboard modifiers
+		return;
+	editSection(this.cellIndex, 1, 1);
+});
+
+$(document).on("dblclick", "#table > tbody > tr > td.vert-section", function(e) {
+	// double click on horizontal section id - edit section
+	if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
+		// need left button without keyboard modifiers
+		return;
+	editSection(this.parentNode.rowIndex, 1, 0);
+});
+
+function editSection(index, span, vertical) {
+	if (vertical) {
+		var sectionClass = "vert-section";
+		var r1 = 0;
+		var c1 = index;
+	} else {
+		var sectionClass = "horiz-section";
+		var r1 = index;
+		var c1 = 0;
+	}
+	var sectionCell = table.rows[r1].cells[c1];
+	var isNewSection = !sectionCell.classList.contains(sectionClass);
+	var sectionIdField = $('#section_editor *[name="section_id"]');
+
+	$("#section_editor").dialog({
+		'title' : isNewSection ? "Create section" : "Edit section",
+		'autoOpen' : true,
+		'modal' : true,
+		'open' : function() {
+			sectionIdField.val(sectionCell.id);
+		},
+		buttons : {
+			'Ok' : function() {
+				var sectionId = sectionIdField.val();
+				if (vertical) {
+					if (!isNewSection)
+						span = sectionCell.colSpan;
+					sectionCell.colSpan = span;
+					for (var c = c1 + 1; c < c1 + span; c++) {
+						var cell = table.rows[0].cells[c];
+						cell.innerHTML = sectionId;
+						cell.classList.add('merged-cell');
+					}
+				} else {
+					if (!isNewSection)
+						span = sectionCell.rowSpan;
+					sectionCell.rowSpan = span;
+					for (var r = r1 + 1; r < r1 + span; r++) {
+						var cell = table.rows[r].cells[0];
+						cell.innerHTML = sectionId;
+						cell.classList.add('merged-cell');
+					}
+				}
+				sectionCell.classList.add(sectionClass);
+				sectionCell.id = sectionId;
+				sectionCell.innerHTML = sectionId;
+				$(this).dialog('close');
+			},
+			'Cancel' : function() {
+				$(this).dialog('close');
+			}
+		},
+	});
+
+}
 
 $.contextMenu({
 	selector : '#table > tbody > tr > td.rowheader',
@@ -497,23 +635,24 @@ $.contextMenu({
 			} else
 				set_selection(el, el);
 		}
+		var items = {
+			'insert_rows' : {
+				'name' : "Insert rows",
+				'callback' : function(e) {
+					addRows(sys.r2 - sys.r1 + 1, sys.r1 - 2);
+					set_selection(sys.selectionStart, sys.selectionEnd);
+				},
+			},
+			'remove_rows' : {
+				'name' : "Remove rows",
+				'callback' : function(e) {
+					removeRows(sys.r1 - 2, sys.r2 - sys.r1 + 1);
+					reset_selection();
+				},
+			},
+		};
 		return {
-			items : {
-				insert_rows : {
-					name : "Insert rows",
-					callback : function(e) {
-						addRows(sys.r2 - sys.r1 + 1, sys.r1 - 2);
-						set_selection(sys.selectionStart, sys.selectionEnd);
-					}
-				},
-				remove_rows : {
-					name : "Remove rows",
-					callback : function(e) {
-						removeRows(sys.r1 - 2, sys.r2 - sys.r1 + 1);
-						reset_selection();
-					}
-				},
-			}
+			'items' : items,
 		}
 	}
 });
