@@ -1,366 +1,77 @@
- /* TODO: expand column completely on double click */
-
 <html>
-<head>
-      <style type="text/css">
-         /* if mozilla */
-         html>body div.scrollable tbody {
-            overflow: auto;
-         }
- 
-         table.resizable th{
-            text-align:center;
-            overflow: hidden;
-         }
- 
-         /* if mozilla, add 10 for the scrollbar */
-         html>body th.scrollbarCol {
-            width:10px;
-         }
- 
-         table.resizable td{
-            overflow: hidden;
-         }
- 
-         table.resizable{
-            table-layout:fixed;
-         }
- 
-         table.resizable input{
-            width:100%;
-         }
- 
-         table.resizable textarea{
-            width:100%;
-         }
- 
-         .nowrap {
-             white-space:nowrap;
-         }
- 
-         /* needed for IE */
-         table.tabular th.scrollbarCol {
-            background-color:transparent; 
-         }
- 
-         table.tabular {
-            FONT-SIZE: 13px;
-            FONT-FAMILY: 'Verdana, Arial, Helvetica, sans-serif';
-            COLOR: #336699;
-         }
- 
-         table.tabular thead {
-             COLOR: #ffffff;
-             FONT-WEIGHT: bold;
-         }
- 
-         table.tabular th{
-            background-color:#c0c0c0; 
-            padding: 4px;
-         }
- 
-         table.tabular td {
-            background-color:#EAF4F3;
-            padding: 2px;
-         }
-      </style>
-<SCRIPT LANGUAGE="JavaScript">
+	<head>
+		<script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+		<script type="text/javascript">
+			var table;
+			$(function() {
+				table = $("#table");
+			});
+			var sys = {
+				selectionStart : null,
+				selectionEnd : null,
+				draggingStart : null,
+				r1 : null,
+				c1 : null,
+				r2 : null,
+				c2 : null,
+			};
 
-var ob;
-var obLeft;
-var obRight;
-var over = false;
-var iEdgeThreshold = 10;
- 
-function findPos(obj) {
-  var curleft = curtop = 0;
-  if (obj.offsetParent) {
-      curleft = obj.offsetLeft;
-      curtop = obj.offsetTop;
-      while (obj = obj.offsetParent) {
-         curleft += obj.offsetLeft;
-         curtop += obj.offsetTop;
-      }
-   }
-   return [curleft,curtop];
-}
- 
-/* Function that tells me if on the border or not */
-function isOnBorderRight(objTable,objTh,event){
-  var width = objTh.offsetWidth;
-  var left = objTh.offsetLeft;
-  var pos = findPos(objTable);
-  var absRight = pos[0] + left + width;
- 
-  if( event.clientX > (absRight - iEdgeThreshold) ){
-      return true;
-  }
- 
-  return false;
-}
- 
-function getNodeName(objReference,nodeName){
-   var oElement = objReference;
-   while (oElement != null && oElement.tagName != null && oElement.tagName != "BODY") {
-      if (oElement.tagName.toUpperCase() == nodeName) {
-         return oElement;
-      }
-      oElement = oElement.parentNode;
-   }
-   return null;
-}
- 
-function doResize(objTh,event){
-    if(!event) event = window.event;
-    var objTable = getNodeName(objTh,"TABLE");
-    if( isOnBorderRight(objTable,objTh,event)){ 
-       over=true;
-       objTh.style.cursor="e-resize";
-    }
-    else{
-       over=false;
-       objTh.style.cursor="";
-    }
-    return over;
-}
- 
-function doneResizing(){
-   over=false;
-}
- 
-function MD(event) {
-   if(!event) event = window.event;
- 
-   MOUSTSTART_X=event.clientX;
-   MOUSTSTART_Y=event.clientY;
- 
-   if (over){      
-       if(event.srcElement)ob = event.srcElement;
-       else if(event.target)ob = event.target;
-       else return;
- 
-       ob = getNodeName(ob,"TH");
-       if(ob == null) return;
-       //ob2 = getNodeName(ob,"TABLE");
-       //obLeft = ob.previousSibling;
-       obRight = ob.nextSibling;
-       //obLeft = ob.previousElementSibling; 
-       //obRight = ob.nextElementSibling;  // Uncomment For FF
-       obwidth=parseInt(ob.style.width);
-       if (obLeft != null)
-       obLeftWidth=parseInt(obLeft.style.width);
-       if (obRight != null)
-       obRightWidth=parseInt(obRight.style.width);
-       //obwidth2=parseInt(ob2.offsetWidth);
-   }        
-}
- 
-function MM(event) {
-    if(!event) event = window.event;
- 
-    if (ob) {
-        st=event.clientX-MOUSTSTART_X+obwidth;
-        //st2=event.clientX-MOUSTSTART_X+obwidth2;
-        document.getElementById("infoDiv").innerHTML = "st=" + st + " clientX=" + event.clientX + " moustart_x=" + MOUSTSTART_X + " obwidth=" + obwidth;
-        //document.getElementById("infoDiv").innerHTML += ;
-        //document.getElementById("infoDiv").innerHTML += ;
-        //document.getElementById("infoDiv").innerHTML += obwidth;
- 
-        if(st>=10){
-            ob.style.width=st;
-            //ob2.style.width=st2;
-            //obLeft.style.width=st-obLeftWidth;
-            obRight.style.width=(parseInt(obwidth - st + obRightWidth) > 10 ? (obwidth - st + obRightWidth) : iEdgeThreshold + "px") ;
-        }
-        if(document.selection) document.selection.empty();
-        else if(window.getSelection)window.getSelection().removeAllRanges();
-    }
-}
- 
-function MU(event) {
-    if(!event) event = window.event;
-    if(ob){
-        if(document.selection) document.selection.empty();
-        else if(window.getSelection)window.getSelection().removeAllRanges();
-        ob = null;
-    }
-}
- 
-document.onmousedown = MD;
-document.onmousemove = MM;
-document.onmouseup = MU;
-</script>
+			$(document).on("mousedown", "#table > tbody > tr > td", function(e) {
+				sys.draggingStart = $(this);
+				sys.draggingStart.data("startX", e.pageX);
+				sys.draggingStart.data("startY", e.pageY);
+				sys.draggingStart.data("startWidth", $(this).width());
+				sys.draggingStart.data("startHeight", $(this).height());
+				sys.draggingStart.data("tableWidth", table.width());
+			});
 
+			$(document).on("mousemove", function(e) {
+				if (sys.draggingStart) {
+					var offset = e.pageX - sys.draggingStart.data("startX");
+					console.log("--");
+					console.log(table.width());
+					table.width(sys.draggingStart.data("tableWidth") + offset);
+					console.log(table.width());
+					sys.draggingStart.width(sys.draggingStart.data("startWidth") + offset);
+				}
+			});
 
-</head> 
-<BODY>
-<!-- 
-YOU MUST HAVE TO DEFINE WIDTH ON STYLE TAB.. if you leave NULL
-IT RETURNS .. ERROR..
--->
-<H1>RESIZABLE TABLE COLUMN</H1>
- 
-<div class="scrollable" >
-<TABLE  id="mytable" style="width:100%; table-layout:fixed" class="sortable resizable tabular">
- 
-<THEAD>
- 
-<TR>
- 
-<TH onmousemove="doResize(this,event)"  onmouseover="doResize(this,event)" onmouseout='doneResizing()' style='width:60px'>Index</TH>
- 
-<TH onmousemove="doResize(this,event)"  onmouseover="doResize(this,event)" onmouseout='doneResizing()' style='width:170px'><span class="nowrap">Parameter Name</span></TH>
- 
-<TH onmousemove="doResize(this,event)"  onmouseover="doResize(this,event)" onmouseout='doneResizing()' style='width:170px'><span class="nowrap">Parameter Value</span></TH>
- 
-<TH onmousemove="doResize(this,event)"  onmouseover="doResize(this,event)" onmouseout='doneResizing()' style='width:110px'><span class="nowrap">Page Name</span></TH>
- 
-<TH class="sorttable_nosort scrollbarCol"></TH>
- 
-</TR>
-</THEAD> 
-<TBODY style="height:200px">
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
- 
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
- 
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
-<TR>
- 
-<TD>0</TD>
- 
-<TD>1_2</TD>
- 
-<TD><input type="text" value="this is a very long text string, this is a very long text string"></TD>
- 
-<TD>1_3</TD>
- 
-</TR>
- 
-<TR>
- 
-<TD>1</TD>
- 
-<TD><span class="nowrap">this is a very long paramter name</span></TD> 
- 
-<TD>2_2</TD>
- 
- 
-<TD>2_3</TD>
- 
- 
-</TR>
- 
- 
-<TR>
- 
-<TD>3_0</TD>
-<TD>3_2</TD>
- 
-<TD><textarea> 
-this is a test of
-this is a test of
-</textarea></TD>
- 
-<TD>3_3</TD>
- 
- 
-</TR>
- 
- 
-<TR>
- 
-<TD>4_0</TD>
- 
- 
-<TD>4_1</TD>
- 
- 
-<TD>4_2</TD>
- 
-<TD>4_3</TD>
- 
-</TR>
- 
-</TBODY>
-</table>
-</div>
-<span id="infoDiv"></span>
-</body>
+			$(document).on("mouseup", function() {
+				sys.draggingStart = null;
+			});
+
+			$(document).on("selectstart", false);
+		</script>
+
+		<style type="text/css">
+			#table {
+				/*border-collapse: collapse;*/
+				border-spacing: 0; /* cellspacing="0"*/
+				table-layout: fixed;
+				width: 400px;
+			}
+			#table td {
+				padding-left: 4px;
+				padding-right: 4px;
+				cursor: default;
+				overflow: hidden;
+				border: 1px solid black;
+			}
+
+		</style>
+	</head>
+
+	<body>
+		<table id="table">
+			<tbody>
+				<tr>
+					<td>32525</td>
+					<td>25</td>
+					<td>2153215</td>
+					<td>121425125125</td>
+				</tr>
+			</tbody>
+		</table>
+	</body>
 </html>
 
-   

@@ -21,6 +21,7 @@ body, input, textarea, div, table {
 	padding-left: 4px;
 	padding-right: 4px;
 	cursor: default;
+	overflow: hidden;
 }
 td.borderless {
 	border: 0px;
@@ -40,6 +41,8 @@ td.table-corner {
 	background-color: #FFFFFF;
 	border: 0px;
 	border: 1px solid #666666;
+	width: 25px;
+	height: 20px;
 }
 td.col-header {
 	color: #808080;
@@ -58,7 +61,6 @@ td.row-header {
 	border-left: 1px solid #666666;
 	text-align: right;
 	vertical-align: middle;
-	width: 25px;
 	height: 20px;
 }
 td.row-section {

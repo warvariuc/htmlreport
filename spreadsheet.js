@@ -21,7 +21,7 @@ var sys = {
 var table;
 
 $(function() {
-	table = document.getElementById('table')
+	table = document.getElementById('table');
 	// cursor keys only in keydown
 	// $(document).on("keydown", keypress);
 	// $(".ui-dialog-content").css("padding", 0);
@@ -265,9 +265,7 @@ $(document).on("mousemove", function(e) {
 });
 
 $(document).on("mouseup", function() {
-	if (sys.draggingStart) {
-		sys.draggingStart = null;
-	}
+	sys.draggingStart = null;
 });
 
 function formatSelection() {
