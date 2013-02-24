@@ -93,26 +93,15 @@ function set_selection(selectionStart, selectionEnd) {
 				var cell = table.rows[r].cells[c];
 				var _r2 = Math.max(r2, r + cell.rowSpan - 1)
 				var _c2 = Math.max(c2, c + cell.colSpan - 1)
-				if (_r2 > r2 || _c2 > c2) {
-					select(r1, c1, _r2, _c2);
-					return;
-				}
+				if (_r2 > r2 || _c2 > c2)
+					return select(r1, c1, _r2, _c2);
 				if (cell.classList.contains('merged-cell')) {
 					sys.selectionHasMergedCells = true;
 					var merged = getMergeData(cell);
 					var _r1 = Math.min(merged.r, r1);
 					var _c1 = Math.min(merged.c, c1);
-					if (_r1 < r1 || _c1 < c1) {
-						select(_r1, _c1, r2, c2);
-						return;
-					}
-					// var _ = cell.getAttribute('data-merge').split(',');
-					// var _r1 = Math.min(parseInt(_[0]), r1);
-					// var _c1 = Math.min(parseInt(_[1]), c1);
-					// if (_r1 < r1 || _c1 < c1) {
-					// select(_r1, _c1, r2, c2);
-					// return;
-					// }
+					if (_r1 < r1 || _c1 < c1)
+						return select(_r1, _c1, r2, c2);
 				}
 				cell.classList.add('cell-selected');
 			}
@@ -163,13 +152,13 @@ function normalize_selection(selectionStart, selectionEnd) {
 		c1 = selectionStart.cellIndex;
 		r2 = selectionEnd.parentNode.rowIndex;
 		c2 = selectionEnd.cellIndex;
-	} else if (selectionStart.classList.contains('colheader')) {
+	} else if (selectionStart.classList.contains('col-header')) {
 		// a column header was the start
 		r1 = 2;
 		c1 = selectionStart.cellIndex;
 		r2 = table.rows.length - 1;
 		c2 = selectionEnd.cellIndex;
-	} else if (selectionStart.classList.contains('rowheader')) {
+	} else if (selectionStart.classList.contains('row-header')) {
 		// a row header was the start
 		r1 = selectionStart.parentNode.rowIndex;
 		c1 = 2;
@@ -256,7 +245,7 @@ $.contextMenu({
 	}
 });
 
-$(document).on("mousedown", "#table > tbody > tr > td.colheader, #table > tbody > tr > td.rowheader", function(e) {
+$(document).on("mousedown", "#table > tbody > tr > td.col-header, #table > tbody > tr > td.row-header", function(e) {
 	if (!e.ctrlKey)
 		return;
 	sys.draggingStart = $(this);
@@ -268,7 +257,7 @@ $(document).on("mousedown", "#table > tbody > tr > td.colheader, #table > tbody 
 
 $(document).on("mousemove", function(e) {
 	if (sys.draggingStart) {
-		if (sys.draggingStart.hasClass("colheader"))
+		if (sys.draggingStart.hasClass("col-header"))
 			sys.draggingStart.width(sys.draggingStart.data("startWidth") + (e.pageX - sys.draggingStart.data("startX")));
 		else
 			sys.draggingStart.height(sys.draggingStart.data("startHeight") + (e.pageY - sys.draggingStart.data("startY")));
@@ -358,8 +347,8 @@ function formatSelection() {
 var newCell = '<td class="cell">&nbsp;</td>';
 var newColGroup = '<td class="col-section"></td>';
 var newRowGroup = '<td class="row-section"></td>';
-var newColHeader = '<td class="colheader" style="width: 50px">1</td>';
-var newRowHeader = '<td class="rowheader" style="height: 20px">1</td>';
+var newColHeader = '<td class="col-header" style="width: 50px">1</td>';
+var newRowHeader = '<td class="row-header" style="height: 20px">1</td>';
 
 function addRows(count, rowNo) {
 	// index doesn't count group and header columns
@@ -419,10 +408,11 @@ function updateNumbering(rowNo, colNo) {
 		for (var colNo = colCount - 1; colNo >= 1; colNo--) {
 			var cell = sectionCells[colNo];
 			var prevCell = sectionCells[colNo + 1];
-			cell.id = "";
+			cell.id = null;
 			var _sectionId = cell.innerHTML;
 			if (_sectionId)
 				cell.classList.add('merged-cell');
+				cell.classList.remove('vert-section');
 			if (sectionId === _sectionId) {
 				if (_sectionId)
 					sectionSpan++;
@@ -478,7 +468,7 @@ function removeRows(rowNo, count) {
 }
 
 $.contextMenu({
-	selector : '#table > tbody > tr > td.corner',
+	selector : '#table > tbody > tr > td.table-corner',
 	build : function($trigger, e) {
 		var el = $trigger[0];
 		return {
@@ -501,13 +491,13 @@ $.contextMenu({
 });
 
 $.contextMenu({
-	selector : '#table > tbody > tr > td.colheader',
+	selector : '#table > tbody > tr > td.col-header',
 	build : function($trigger, e) {
 		var el = $trigger[0];
 		if (!sys.selectionStart)
 			set_selection(el, el);
 		else {
-			if (sys.selectionStart.classList.contains('colheader')) {
+			if (sys.selectionStart.classList.contains('col-header')) {
 				if (el.cellIndex < sys.c1 || el.cellIndex > sys.c2)
 					set_selection(el, el);
 			} else
@@ -558,7 +548,7 @@ $(document).on("dblclick", "#table > tbody > tr > td.vert-section", function(e) 
 	editSection(this.cellIndex, 1, 1);
 });
 
-$(document).on("dblclick", "#table > tbody > tr > td.vert-section", function(e) {
+$(document).on("dblclick", "#table > tbody > tr > td.horiz-section", function(e) {
 	// double click on horizontal section id - edit section
 	if (e.which != 1 || e.shiftKey || e.altKey || e.ctrlKey)
 		// need left button without keyboard modifiers
@@ -590,6 +580,13 @@ function editSection(index, span, vertical) {
 		buttons : {
 			'Ok' : function() {
 				var sectionId = sectionIdField.val();
+				if (!sectionId)
+					return alert('Section identifier can not be empty');
+				var existing = document.getElementById(sectionId);
+				if (existing) {
+					if (existing !== sectionCell)
+						return alert('This identifier is already used. Choose another.');
+				}
 				if (vertical) {
 					if (!isNewSection)
 						span = sectionCell.colSpan;
@@ -623,13 +620,13 @@ function editSection(index, span, vertical) {
 }
 
 $.contextMenu({
-	selector : '#table > tbody > tr > td.rowheader',
+	selector : '#table > tbody > tr > td.row-header',
 	build : function($trigger, e) {
 		var el = $trigger[0];
 		if (!sys.selectionStart)
 			set_selection(el, el);
 		else {
-			if (sys.selectionStart.classList.contains('rowheader')) {
+			if (sys.selectionStart.classList.contains('row-header')) {
 				if (el.parentNode.rowIndex < sys.r1 || el.parentNode.rowIndex > sys.r2)
 					set_selection(el, el);
 			} else
