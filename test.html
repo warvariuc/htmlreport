@@ -16,24 +16,35 @@
 				c2 : null,
 			};
 
-			$(document).on("mousedown", "#table > tbody > tr > td", function(e) {
+			$(document).on("mousedown", "#table > tbody > tr > td.col-header, #table > tbody > tr > td.row-header", function(e) {
 				sys.draggingStart = $(this);
 				sys.draggingStart.data("startX", e.pageX);
 				sys.draggingStart.data("startY", e.pageY);
 				sys.draggingStart.data("startWidth", $(this).width());
 				sys.draggingStart.data("startHeight", $(this).height());
 				sys.draggingStart.data("tableWidth", table.width());
+				sys.draggingStart.data("tableHeight", table.height());
 			});
 
 			$(document).on("mousemove", function(e) {
-				if (sys.draggingStart) {
-					var offset = e.pageX - sys.draggingStart.data("startX");
-					console.log("--");
-					console.log(table.width());
-					table.width(sys.draggingStart.data("tableWidth") + offset);
-					console.log(table.width());
-					sys.draggingStart.width(sys.draggingStart.data("startWidth") + offset);
-				}
+                if (sys.draggingStart) {
+                    if (sys.draggingStart.hasClass("col-header")) {
+                        var offset = e.pageX - sys.draggingStart.data("startX");
+                        // console.log("--");
+                        // console.log(table.width());
+                        table.width(sys.draggingStart.data("tableWidth") + offset);
+                        // console.log(table.width());
+                        sys.draggingStart.width(sys.draggingStart.data("startWidth") + offset);
+                    }
+                    else {
+                        var offset = e.pageX - sys.draggingStart.data("startY");
+                        sys.draggingStart.height(sys.draggingStart.data("startHeight") + offset);
+                        console.log("--");
+                        console.log(table.height());
+                        table.height(sys.draggingStart.data("tableHeight") + sys.draggingStart.height() - sys.draggingStart.data("startHeight"));
+                        console.log(table.height());
+                    }
+                }
 			});
 
 			$(document).on("mouseup", function() {
@@ -45,19 +56,32 @@
 
 		<style type="text/css">
 			#table {
-				/*border-collapse: collapse;*/
+				border-collapse: collapse;
 				border-spacing: 0; /* cellspacing="0"*/
 				table-layout: fixed;
 				width: 400px;
 			}
-			#table td {
+			td {
 				padding-left: 4px;
 				padding-right: 4px;
 				cursor: default;
 				overflow: hidden;
 				border: 1px solid black;
 			}
-
+			/*td.col-header {
+				padding-left: 4px;
+				padding-right: 4px;
+				cursor: default;
+				overflow: hidden;
+				border: 1px solid black;
+			}
+			td.row-header {
+				padding-left: 4px;
+				padding-right: 4px;
+				cursor: default;
+				overflow: hidden;
+				border: 1px solid black;
+			}*/
 		</style>
 	</head>
 
@@ -65,7 +89,19 @@
 		<table id="table">
 			<tbody>
 				<tr>
-					<td>32525</td>
+					<td class="col-header">32525</td>
+					<td class="col-header">25</td>
+					<td class="col-header">2153215</td>
+					<td class="col-header">121425125125</td>
+				</tr>
+				<tr>
+					<td class="row-header">32525</td>
+					<td>25</td>
+					<td>2153215</td>
+					<td>121425125125</td>
+				</tr>
+				<tr>
+					<td class="row-header">32525</td>
 					<td>25</td>
 					<td>2153215</td>
 					<td>121425125125</td>
