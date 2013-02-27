@@ -37,12 +37,12 @@
                         sys.draggingStart.width(sys.draggingStart.data("startWidth") + offset);
                     }
                     else {
-                        var offset = e.pageX - sys.draggingStart.data("startY");
+                        var offset = e.pageY - sys.draggingStart.data("startY");
                         sys.draggingStart.height(sys.draggingStart.data("startHeight") + offset);
-                        console.log("--");
-                        console.log(table.height());
+                        // console.log("--");
+                        // console.log(table.height());
                         table.height(sys.draggingStart.data("tableHeight") + sys.draggingStart.height() - sys.draggingStart.data("startHeight"));
-                        console.log(table.height());
+                        // console.log(table.height());
                     }
                 }
 			});
@@ -68,7 +68,7 @@
 				overflow: hidden;
 				border: 1px solid black;
 			}
-			/*td.col-header {
+			td.col-header {
 				padding-left: 4px;
 				padding-right: 4px;
 				cursor: default;
@@ -80,8 +80,10 @@
 				padding-right: 4px;
 				cursor: default;
 				overflow: hidden;
+				overflow-y: hidden;
 				border: 1px solid black;
-			}*/
+				height: 20px;
+			}
 		</style>
 	</head>
 
@@ -101,10 +103,10 @@
 					<td>121425125125</td>
 				</tr>
 				<tr>
-					<td class="row-header">32525</td>
-					<td>25</td>
-					<td>2153215</td>
-					<td>121425125125</td>
+					<td class="row-header"></td>
+					<td></td>
+					<td></td>
+					<td></td>
 				</tr>
 			</tbody>
 		</table>
