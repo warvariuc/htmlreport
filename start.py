@@ -149,5 +149,5 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     main_window = MainWindow()
     main_window.show()
-    main_window.web_view.load(QtCore.QUrl('spreadsheet.html'))  # load existing page
+    main_window.web_view.load(QtCore.QUrl('template.html'))  # load existing page
     app.exec()

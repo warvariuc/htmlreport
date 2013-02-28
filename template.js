@@ -345,8 +345,8 @@ function formatSelection() {
 var newCell = '<td class="cell">&nbsp;</td>';
 var newColGroup = '<td class="col-section"></td>';
 var newRowGroup = '<td class="row-section"></td>';
-var newColHeader = '<td class="col-header" style="width: 50px">1</td>';
-var newRowHeader = '<td class="row-header" style="height: 20px">1</td>';
+var newColHeader = '<td class="col-header"></td>';
+var newRowHeader = '<td class="row-header"></td>';
 
 function addRows(count, rowNo) {
 	// index doesn't count group and header columns
@@ -391,13 +391,13 @@ function addColumns(count, colNo) {
 function updateNumbering(rowNo, colNo) {
 	if (isInteger(rowNo)) {
 		var rowCount = table.rows.length;
-		for (; rowNo < rowCount; rowNo++)
-			table.rows[rowNo].cells[1].innerHTML = rowNo - 1;
+		// for (; rowNo < rowCount; rowNo++)
+			// table.rows[rowNo].cells[1].innerHTML = rowNo - 1;
 	} else if (isInteger(colNo)) {
 		var headerCells = table.rows[1].cells;
 		var colCount = headerCells.length;
-		for (; colNo < colCount; colNo++)
-			headerCells[colNo].innerHTML = colNo - 1;
+		// for (; colNo < colCount; colNo++)
+			// headerCells[colNo].innerHTML = colNo - 1;
 
 		var sectionCells = table.rows[0].cells;
 		var colCount = sectionCells.length;
