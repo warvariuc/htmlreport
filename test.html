@@ -30,19 +30,18 @@
                 if (sys.draggingStart) {
                     if (sys.draggingStart.hasClass("col-header")) {
                         var offset = e.pageX - sys.draggingStart.data("startX");
-                        // console.log("--");
-                        // console.log(table.width());
-                        table.width(sys.draggingStart.data("tableWidth") + offset);
-                        // console.log(table.width());
-                        sys.draggingStart.width(sys.draggingStart.data("startWidth") + offset);
+                        var newWidth = sys.draggingStart.data("startWidth") + offset;
+                        sys.draggingStart.children('div').width(newWidth);
+                        sys.draggingStart.width(newWidth);
+                        sys.draggingStart.children('div').width(sys.draggingStart.width());
                     }
                     else {
                         var offset = e.pageY - sys.draggingStart.data("startY");
-                        sys.draggingStart.height(sys.draggingStart.data("startHeight") + offset);
-                        // console.log("--");
-                        // console.log(table.height());
-                        table.height(sys.draggingStart.data("tableHeight") + sys.draggingStart.height() - sys.draggingStart.data("startHeight"));
-                        // console.log(table.height());
+                        var newHeight = sys.draggingStart.data("startHeight") + offset;
+                        sys.draggingStart.height(newHeight);
+                        sys.draggingStart.children('div').height(newHeight);
+                        console.log(newHeight, sys.draggingStart.height());
+                        sys.draggingStart.children('div').height(sys.draggingStart.height());
                     }
                 }
 			});
@@ -59,8 +58,6 @@
 				border-collapse: collapse;
 				border-spacing: 0; /* cellspacing="0"*/
 				table-layout: fixed;
-				width: 400px;
-				height: 60px;
 			}
 			td {
 				padding-left: 4px;
@@ -69,12 +66,19 @@
 				border: 1px solid black;
 			}
 			td.col-header {
-				overflow: hidden;
 				background-color: #DDDDDD;
+				padding: 0;
 			}
 			td.row-header {
 				height: 20px;
 				background-color: #DDDDDD;
+				padding: 0;
+			}
+			td.row-header div {
+				overflow: hidden;
+			}
+			td.col-header div {
+				overflow: hidden;
 			}
 		</style>
 	</head>
@@ -83,19 +87,19 @@
 		<table id="table">
 			<tbody>
 				<tr>
-					<td class="col-header">32525</td>
-					<td class="col-header">25</td>
-					<td class="col-header">2153215</td>
-					<td class="col-header">121425125125</td>
+					<td></td>
+					<td class="col-header"><div>25</div></td>
+					<td class="col-header"><div>2153215</div></td>
+					<td class="col-header"><div>121425125125</div></td>
 				</tr>
 				<tr>
-					<td class="row-header">32525</td>
+					<td class="row-header"><div>32525</div></td>
 					<td>25</td>
-					<td>215 3215</td>
+					<td></td>
 					<td>1214 2512 5125</td>
 				</tr>
 				<tr>
-					<td class="row-header"><div style="height: 5px; overflow:hidden;">23</div></td>
+					<td class="row-header"><div>23</div></td>
 					<td></td>
 					<td></td>
 					<td></td>
