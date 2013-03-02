@@ -393,9 +393,8 @@ function addRows(count, rowNo) {
 function addColumns(count, colNo) {
 	count = count || 1;
 	colNo = (colNo === undefined) ? table.rows[0].cells.length : colNo + 2;
-	var rowCount = table.rows.length;
 	for (var i = 0; i < count; i++)
-		for (var rowNo = 0; rowNo < rowCount; rowNo++) {
+		for (var rowNo = 0; rowNo < table.rows.length; rowNo++) {
 			var row = table.rows[rowNo];
 			var td = row.insertCell(colNo);
 			if (rowNo == 0) {
@@ -470,13 +469,14 @@ function getMergeData(cell) {
 function removeColumns(colNo, count) {
 	colNo += 2;
 	count = count || 1;
-	var rowCount = table.rows.length;
-
-	for (var rowNo = 0; rowNo < rowCount; rowNo++) {
-		var row = table.rows[rowNo];
-		for (var i = 0; i < count; i++)
-			row.deleteCell(colNo);
-	};
+	for (var i = 0; i < count; i++) {
+		var sectionTd = $('#' + table.rows[0].cells[colNo].textContent);
+		sectionTd.children('div').width(0);
+		sectionTd.attr('colSpan', 1);
+		for (var rowNo = 0; rowNo < table.rows.length; rowNo++)
+			table.rows[rowNo].deleteCell(colNo);
+		resizeColumn($(sectionTd), '');
+	}
 	updateNumbering(null, colNo);
 }
 
@@ -486,6 +486,67 @@ function removeRows(rowNo, count) {
 	for (var i = 0; i < count; i++)
 		table.deleteRow(rowNo);
 	updateNumbering(rowNo, null);
+}
+
+function editSection(index, span, vertical) {
+	if (vertical) {
+		var sectionClass = "vert-section";
+		var r1 = 0;
+		var c1 = index;
+	} else {
+		var sectionClass = "horiz-section";
+		var r1 = index;
+		var c1 = 0;
+	}
+	var sectionTd = table.rows[r1].cells[c1];
+	var isNewSection = !sectionTd.classList.contains(sectionClass);
+	var sectionIdField = $('#section_editor *[name="section_id"]');
+
+	$("#section_editor").dialog({
+		'title' : isNewSection ? "Create section" : "Edit section",
+		'autoOpen' : true,
+		'modal' : true,
+		'open' : function() {
+			sectionIdField.val(sectionTd.id);
+		},
+		buttons : {
+			'Ok' : function() {
+				var sectionId = sectionIdField.val();
+				if (!/^([\w\d])+$/.test(sectionId))
+					return alert('Invalid section identifier.');
+				var existing = document.getElementById(sectionId);
+				if (existing && existing !== sectionTd)
+					return alert('This identifier is already used. Choose another.');
+				sectionTd.classList.add(sectionClass);
+				sectionTd.id = sectionId;
+				sectionTd.children[0].textContent = sectionId;
+				sectionTd.title = sectionId;
+				if (vertical) {
+					if (isNewSection)
+						sectionTd.colSpan = span;
+					for (var c = c1 + 1; c < c1 + sectionTd.colSpan; c++) {
+						var cell = table.rows[0].cells[c];
+						cell.children[0].textContent = sectionId;
+						cell.classList.add('merged-cell');
+					}
+					resizeColumn($(sectionTd), '');
+				} else {
+					if (isNewSection)
+						sectionTd.rowSpan = span;
+					for (var r = r1 + 1; r < r1 + sectionTd.rowSpan; r++) {
+						var cell = table.rows[r].cells[0];
+						cell.children[0].textContent = sectionId;
+						cell.classList.add('merged-cell');
+					}
+				}
+				$(this).dialog('close');
+			},
+			'Cancel' : function() {
+				$(this).dialog('close');
+			}
+		},
+	});
+
 }
 
 $.contextMenu({
@@ -541,13 +602,9 @@ $.contextMenu({
 			},
 		};
 		var isOk = true;
-		for (var colNo = sys.c1; colNo <= sys.c2; colNo++) {
-			var cell = table.rows[0].cells[colNo];
-			if (cell.classList.contains('vert-section') || cell.classList.contains('merged-cell')) {
+		for (var colNo = sys.c1; colNo <= sys.c2; colNo++)
+			if (table.rows[0].cells[colNo].textContent)
 				isOk = false;
-				break;
-			}
-		}
 		if (isOk)
 			items['create_section'] = {
 				'name' : "Create section",
@@ -576,69 +633,6 @@ $(document).on("dblclick", "#table > tbody > tr > td.horiz-section", function(e)
 		return;
 	editSection(this.parentNode.rowIndex, 1, 0);
 });
-
-function editSection(index, span, vertical) {
-	if (vertical) {
-		var sectionClass = "vert-section";
-		var r1 = 0;
-		var c1 = index;
-	} else {
-		var sectionClass = "horiz-section";
-		var r1 = index;
-		var c1 = 0;
-	}
-	var sectionTd = table.rows[r1].cells[c1];
-	var isNewSection = !sectionTd.classList.contains(sectionClass);
-	var sectionIdField = $('#section_editor *[name="section_id"]');
-
-	$("#section_editor").dialog({
-		'title' : isNewSection ? "Create section" : "Edit section",
-		'autoOpen' : true,
-		'modal' : true,
-		'open' : function() {
-			sectionIdField.val(sectionTd.id);
-		},
-		buttons : {
-			'Ok' : function() {
-				var sectionId = sectionIdField.val();
-				if (!/^([\w\d])+$/.test(sectionId))
-					return alert('Invalid section identifier.');
-				var existing = document.getElementById(sectionId);
-				if (existing && existing !== sectionTd)
-					return alert('This identifier is already used. Choose another.');
-				sectionTd.classList.add(sectionClass);
-				sectionTd.id = sectionId;
-				sectionTd.children[0].textContent = sectionId;
-				sectionTd.title = sectionId;
-				if (vertical) {
-					if (isNewSection)
-						sectionTd.colSpan = span;
-					for (var c = c1 + 1; c < c1 + sectionTd.colSpan; c++) {
-						var cell = table.rows[0].cells[c];
-						cell.children[0].textContent = sectionId;
-						cell.classList.add('merged-cell');
-					}
-					resizeColumn($(sectionTd), $(sectionTd).width());
-					// reset the section td width to be auto
-					$(sectionTd).width('');
-				} else {
-					if (isNewSection)
-						sectionTd.rowSpan = span;
-					for (var r = r1 + 1; r < r1 + sectionTd.rowSpan; r++) {
-						var cell = table.rows[r].cells[0];
-						cell.children[0].textContent = sectionId;
-						cell.classList.add('merged-cell');
-					}
-				}
-				$(this).dialog('close');
-			},
-			'Cancel' : function() {
-				$(this).dialog('close');
-			}
-		},
-	});
-
-}
 
 $.contextMenu({
 	selector : '#table > tbody > tr > td.row-header',
@@ -669,6 +663,17 @@ $.contextMenu({
 				},
 			},
 		};
+		var isOk = true;
+		for (var rowNo = sys.r1; rowNo <= sys.r2; rowNo++)
+			if (table.rows[rowNo].cells[0].textContent)
+				isOk = false;
+		if (isOk)
+			items['create_section'] = {
+				'name' : "Create section",
+				'callback' : function(e) {
+					editSection(sys.r1, sys.r2 - sys.r1 + 1, 0)
+				},
+			};
 		return {
 			'items' : items,
 		}

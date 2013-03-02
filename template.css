@@ -73,6 +73,11 @@ td.row-section {
 	padding: 0px 1px;
 	width: 15px;
 }
+td.horiz-section {
+	text-align: left;
+	color: black;
+	background-color: #C3DEB7;
+}
 td.col-section {
 	/*display: none;*/
 	color: #666666;
