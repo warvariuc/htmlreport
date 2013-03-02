@@ -18,15 +18,14 @@ body, input, textarea, div, table {
 	table-layout: fixed;
 }
 #table td {
-	padding-left: 4px;
-	padding-right: 4px;
 	cursor: default;
-	overflow: hidden;
 }
 td.borderless {
 	border: 0px;
 }
 td.cell {
+	padding-left: 4px;
+	padding-right: 4px;
 	border-right: 1px solid #CCCCCC;
 	border-bottom: 1px solid #CCCCCC;
 }
@@ -41,7 +40,7 @@ td.table-corner {
 	background-color: #FFFFFF;
 	border: 0px;
 	border: 1px solid #666666;
-	width: 5px;
+	width: 30px;
 	height: 10px;
 }
 td.col-header {
@@ -51,7 +50,7 @@ td.col-header {
 	border-bottom: 1px solid #666666;
 	border-top: 1px solid #666666;
 	width: 50px;
-	text-align: center;
+	vertical-align: middle;
 }
 td.row-header {
 	color: #808080;
@@ -60,8 +59,10 @@ td.row-header {
 	border-right: 1px solid #666666;
 	border-left: 1px solid #666666;
 	text-align: right;
-	vertical-align: middle;
 	height: 20px;
+}
+td.row-header div, td.col-header div, td.row-section div {
+	overflow: hidden;
 }
 td.row-section {
 	/*display: none;*/
@@ -69,8 +70,7 @@ td.row-section {
 	background-color: #FFFFFF;
 	border-top: 1px solid #FFFFFF;
 	border-bottom: 1px solid #FFFFFF;
-	padding-left: 5px;
-	padding-right: 5px;
+	padding: 0px 1px;
 	width: 15px;
 }
 td.col-section {
@@ -79,9 +79,13 @@ td.col-section {
 	background-color: #FFFFFF;
 	border-right: 1px solid #FFFFFF;
 	border-left: 1px solid #FFFFFF;
-	padding-left: 5px;
-	padding-right: 5px;
+	padding: 0px 1px;
 	height: 20px;
+}
+td.col-section div {
+	width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 td.vert-section {
 	text-align: center;

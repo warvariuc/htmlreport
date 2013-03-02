@@ -257,16 +257,39 @@ $(document).on("mousedown", "#table > tbody > tr > td.col-header, #table > tbody
 
 $(document).on("mousemove", function(e) {
 	if (sys.draggingStart) {
-		if (sys.draggingStart.hasClass("col-header"))
-			sys.draggingStart.width(sys.draggingStart.data("startWidth") + (e.pageX - sys.draggingStart.data("startX")));
-		else
-			sys.draggingStart.height(sys.draggingStart.data("startHeight") + (e.pageY - sys.draggingStart.data("startY")));
+		if (sys.draggingStart.hasClass("col-header")) {
+			var headerTd = sys.draggingStart;
+			var newWidth = headerTd.data("startWidth") + e.pageX - headerTd.data("startX");
+			resizeColumn(headerTd, newWidth)
+		} else {
+			var start = sys.draggingStart;
+			var div = start.children('div').eq(0);
+			var offset = e.pageY - start.data("startY");
+			var newHeight = start.data("startHeight") + offset;
+			div.height(0);
+			start.height(newHeight);
+			div.height(start.height());
+			div.prop('title', (div.height() < div.prop('scrollHeight')) ? start.text() : '');
+		}
 	}
 });
 
 $(document).on("mouseup", function() {
 	sys.draggingStart = null;
 });
+
+function resizeColumn(headerTd, newWidth) {
+	var headerDiv = headerTd.children('div');
+	var sectionTd = $('#' + table.rows[0].cells[headerTd[0].cellIndex].textContent);
+	var sectionDiv = sectionTd.children('div');
+	headerDiv.width(0);
+	sectionDiv.width(0);
+	headerTd.width(newWidth);
+	headerDiv.width(headerTd.width());
+	// headerTd.prop('title', (headerDiv.width() < headerDiv.prop('scrollWidth')) ? headerDiv.text() : '');
+	sectionDiv.width(sectionTd.width());
+	// sectionTd.prop('title', (sectionDiv.width() < sectionDiv.prop('scrollWidth')) ? sectionDiv.text() : '');
+}
 
 function formatSelection() {
 	var cell = table.rows[sys.r1].cells[sys.c1];
@@ -343,10 +366,10 @@ function formatSelection() {
 }
 
 var newCell = '<td class="cell">&nbsp;</td>';
-var newColGroup = '<td class="col-section"></td>';
-var newRowGroup = '<td class="row-section"></td>';
-var newColHeader = '<td class="col-header"></td>';
-var newRowHeader = '<td class="row-header"></td>';
+var newColSection = '<td class="col-section"><div></div></td>';
+var newRowSection = '<td class="row-section"><div></div></td>';
+var newColHeader = '<td class="col-header"><div></div></td>';
+var newRowHeader = '<td class="row-header"><div></div></td>';
 
 function addRows(count, rowNo) {
 	// index doesn't count group and header columns
@@ -354,14 +377,14 @@ function addRows(count, rowNo) {
 	rowNo = (rowNo === undefined) ? table.rows.length : rowNo + 2;
 	var colCount = table.rows[0].cells.length;
 	for (var i = 0; i < count; i++) {
-		var row = table.insertRow(rowNo)
-		var td = row.insertCell(-1)
-		td.outerHTML = newRowGroup
-		td = row.insertCell(-1)
-		td.outerHTML = newRowHeader
+		var row = table.insertRow(rowNo);
+		var td = row.insertCell(-1);
+		td.outerHTML = newRowSection;
+		td = row.insertCell(-1);
+		td.outerHTML = newRowHeader;
 		for (var colNo = 0; colNo < colCount - 2; colNo++) {
-			td = row.insertCell(-1)
-			td.outerHTML = newCell
+			td = row.insertCell(-1);
+			td.outerHTML = newCell;
 		}
 	}
 	updateNumbering(rowNo, null);
@@ -376,14 +399,14 @@ function addColumns(count, colNo) {
 			var row = table.rows[rowNo];
 			var td = row.insertCell(colNo);
 			if (rowNo == 0) {
-				td.outerHTML = newColGroup
+				td.outerHTML = newColSection;
 				var prevCell = row.cells[colNo + 1];
 				if (prevCell)
 					row.cells[colNo].innerHTML = prevCell.innerHTML;
 			} else if (rowNo == 1)
-				td.outerHTML = newColHeader
+				td.outerHTML = newColHeader;
 			else
-				td.outerHTML = newCell
+				td.outerHTML = newCell;
 		}
 	updateNumbering(null, colNo);
 }
@@ -391,13 +414,13 @@ function addColumns(count, colNo) {
 function updateNumbering(rowNo, colNo) {
 	if (isInteger(rowNo)) {
 		var rowCount = table.rows.length;
-		// for (; rowNo < rowCount; rowNo++)
-			// table.rows[rowNo].cells[1].innerHTML = rowNo - 1;
+		for (; rowNo < rowCount; rowNo++)
+			table.rows[rowNo].cells[1].children[0].innerHTML = rowNo - 1;
 	} else if (isInteger(colNo)) {
 		var headerCells = table.rows[1].cells;
 		var colCount = headerCells.length;
-		// for (; colNo < colCount; colNo++)
-			// headerCells[colNo].innerHTML = colNo - 1;
+		for (; colNo < colCount; colNo++)
+			headerCells[colNo].children[0].innerHTML = colNo - 1;
 
 		var sectionCells = table.rows[0].cells;
 		var colCount = sectionCells.length;
@@ -407,10 +430,10 @@ function updateNumbering(rowNo, colNo) {
 			var cell = sectionCells[colNo];
 			var prevCell = sectionCells[colNo + 1];
 			cell.id = null;
-			var _sectionId = cell.innerHTML;
+			var _sectionId = cell.textContent;
 			if (_sectionId)
 				cell.classList.add('merged-cell');
-				cell.classList.remove('vert-section');
+			cell.classList.remove('vert-section');
 			if (sectionId === _sectionId) {
 				if (_sectionId)
 					sectionSpan++;
@@ -564,8 +587,8 @@ function editSection(index, span, vertical) {
 		var r1 = index;
 		var c1 = 0;
 	}
-	var sectionCell = table.rows[r1].cells[c1];
-	var isNewSection = !sectionCell.classList.contains(sectionClass);
+	var sectionTd = table.rows[r1].cells[c1];
+	var isNewSection = !sectionTd.classList.contains(sectionClass);
 	var sectionIdField = $('#section_editor *[name="section_id"]');
 
 	$("#section_editor").dialog({
@@ -573,40 +596,40 @@ function editSection(index, span, vertical) {
 		'autoOpen' : true,
 		'modal' : true,
 		'open' : function() {
-			sectionIdField.val(sectionCell.id);
+			sectionIdField.val(sectionTd.id);
 		},
 		buttons : {
 			'Ok' : function() {
 				var sectionId = sectionIdField.val();
-				if (!sectionId)
-					return alert('Section identifier can not be empty');
+				if (!/^([\w\d])+$/.test(sectionId))
+					return alert('Invalid section identifier.');
 				var existing = document.getElementById(sectionId);
-				if (existing) {
-					if (existing !== sectionCell)
-						return alert('This identifier is already used. Choose another.');
-				}
+				if (existing && existing !== sectionTd)
+					return alert('This identifier is already used. Choose another.');
+				sectionTd.classList.add(sectionClass);
+				sectionTd.id = sectionId;
+				sectionTd.children[0].textContent = sectionId;
+				sectionTd.title = sectionId;
 				if (vertical) {
-					if (!isNewSection)
-						span = sectionCell.colSpan;
-					sectionCell.colSpan = span;
-					for (var c = c1 + 1; c < c1 + span; c++) {
+					if (isNewSection)
+						sectionTd.colSpan = span;
+					for (var c = c1 + 1; c < c1 + sectionTd.colSpan; c++) {
 						var cell = table.rows[0].cells[c];
-						cell.innerHTML = sectionId;
+						cell.children[0].textContent = sectionId;
 						cell.classList.add('merged-cell');
 					}
+					resizeColumn($(sectionTd), $(sectionTd).width());
+					// reset the section td width to be auto
+					$(sectionTd).width('');
 				} else {
-					if (!isNewSection)
-						span = sectionCell.rowSpan;
-					sectionCell.rowSpan = span;
-					for (var r = r1 + 1; r < r1 + span; r++) {
+					if (isNewSection)
+						sectionTd.rowSpan = span;
+					for (var r = r1 + 1; r < r1 + sectionTd.rowSpan; r++) {
 						var cell = table.rows[r].cells[0];
-						cell.innerHTML = sectionId;
+						cell.children[0].textContent = sectionId;
 						cell.classList.add('merged-cell');
 					}
 				}
-				sectionCell.classList.add(sectionClass);
-				sectionCell.id = sectionId;
-				sectionCell.innerHTML = sectionId;
 				$(this).dialog('close');
 			},
 			'Cancel' : function() {

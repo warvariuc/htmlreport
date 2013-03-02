@@ -29,19 +29,24 @@
 			$(document).on("mousemove", function(e) {
                 if (sys.draggingStart) {
                     if (sys.draggingStart.hasClass("col-header")) {
-                        var offset = e.pageX - sys.draggingStart.data("startX");
-                        var newWidth = sys.draggingStart.data("startWidth") + offset;
-                        sys.draggingStart.children('div').width(newWidth);
-                        sys.draggingStart.width(newWidth);
-                        sys.draggingStart.children('div').width(sys.draggingStart.width());
+                    	var start = sys.draggingStart;
+                        var div = start.children('div').eq(0);
+                        var offset = e.pageX - start.data("startX");
+                        var newWidth = start.data("startWidth") + offset;
+                        start.width(newWidth);
+                        div.width(newWidth);
+                        div.width(start.width());
                     }
                     else {
-                        var offset = e.pageY - sys.draggingStart.data("startY");
-                        var newHeight = sys.draggingStart.data("startHeight") + offset;
-                        sys.draggingStart.height(newHeight);
-                        sys.draggingStart.children('div').height(newHeight);
-                        console.log(newHeight, sys.draggingStart.height());
-                        sys.draggingStart.children('div').height(sys.draggingStart.height());
+                    	var start = sys.draggingStart;
+                        var div = start.children('div').eq(0);
+                        var offset = e.pageY - start.data("startY");
+                        var newHeight = start.data("startHeight") + offset;
+                        start.height(newHeight);
+                        div.height(newHeight);
+                        // console.log(div.height(), div.prop('scrollHeight'));
+                        div.height(start.height());
+                      	div.prop('title', (div.height() < div.prop('scrollHeight')) ? start.text() : '');
                     }
                 }
 			});
