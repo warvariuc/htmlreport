@@ -82,7 +82,6 @@ function on_mouse_over_cell(selectionEnd) {
 function set_selection(selectionStart, selectionEnd) {
 
 	function select(r1, c1, r2, c2) {
-		sys.selectionHasMergedCells = false;
 		sys.r1 = r1;
 		sys.c1 = c1;
 		sys.r2 = r2;
@@ -96,7 +95,6 @@ function set_selection(selectionStart, selectionEnd) {
 				if (_r2 > r2 || _c2 > c2)
 					return select(r1, c1, _r2, _c2);
 				if (cell.classList.contains('merged-cell')) {
-					sys.selectionHasMergedCells = true;
 					var merged = getMergeData(cell);
 					var _r1 = Math.min(merged.r, r1);
 					var _c1 = Math.min(merged.c, c1);
@@ -186,7 +184,6 @@ function mergeCells(_sys) {
 	var cell = table.rows[_sys.r1].cells[_sys.c1];
 	cell.colSpan = _sys.c2 - _sys.c1 + 1;
 	cell.rowSpan = _sys.r2 - _sys.r1 + 1;
-	_sys.selectionHasMergedCells = true;
 }
 
 function splitSelectedCells() {
@@ -199,29 +196,41 @@ function splitSelectedCells() {
 			cell.colSpan = 1;
 		}
 	}
-	sys.selectionHasMergedCells = false;
 }
 
 function clearSelectionContents() {
 	for (var r = sys.r1; r <= sys.r2; r++) {
 		for (var c = sys.c1; c <= sys.c2; c++) {
 			var cell = table.rows[r].cells[c];
-			cell.innerHTML = '';
+			if (!cell.classList.contains('merged-cell'))
+				cell.innerHTML = '';
 		}
 	}
 }
 
+// context menu for selected cells
 $.contextMenu({
 	selector : '#table > tbody > tr > td.cell-selected',
 	build : function($trigger, e) {
 		var items = {};
-		if (sys.selectionHasMergedCells)
+		var selectionHasMergedCells = false;
+		var vertSelectionSections = {};
+		var horizSelectionSections = {};
+		for (var r = sys.r1; r <= sys.r2; r++) {
+			for (var c = sys.c1; c <= sys.c2; c++) {
+				if (table.rows[r].cells[c].classList.contains('merged-cell'))
+					selectionHasMergedCells = true;
+				vertSelectionSections[table.rows[0].cells[c].textContent] = 1;
+				horizSelectionSections[table.rows[r].cells[0].textContent] = 1;
+			}
+		}
+		if (selectionHasMergedCells)
 			items['split_cells'] = {
 				'name' : "Split merged cells",
 				'callback' : splitSelectedCells,
 				'icon' : 'split_cell',
 			};
-		else if (sys.selectionStart !== sys.selectionEnd)
+		else if ((sys.c1 != sys.c2 || sys.r1 != sys.r2) && Object.keys(vertSelectionSections).length == 1 && Object.keys(horizSelectionSections).length == 1)
 			items['mergeCells'] = {
 				'name' : "Merge selected cells",
 				'callback' : function() {
@@ -245,6 +254,7 @@ $.contextMenu({
 	}
 });
 
+// column/row resizing
 $(document).on("mousedown", "#table > tbody > tr > td.col-header, #table > tbody > tr > td.row-header", function(e) {
 	if (!e.ctrlKey)
 		return;
@@ -256,21 +266,21 @@ $(document).on("mousedown", "#table > tbody > tr > td.col-header, #table > tbody
 });
 
 $(document).on("mousemove", function(e) {
-	if (sys.draggingStart) {
-		if (sys.draggingStart.hasClass("col-header")) {
-			var headerTd = sys.draggingStart;
-			var newWidth = headerTd.data("startWidth") + e.pageX - headerTd.data("startX");
-			resizeColumn(headerTd, newWidth)
-		} else {
-			var start = sys.draggingStart;
-			var div = start.children('div').eq(0);
-			var offset = e.pageY - start.data("startY");
-			var newHeight = start.data("startHeight") + offset;
-			div.height(0);
-			start.height(newHeight);
-			div.height(start.height());
-			div.prop('title', (div.height() < div.prop('scrollHeight')) ? start.text() : '');
-		}
+	if (!sys.draggingStart)
+		return;
+	if (sys.draggingStart.hasClass("col-header")) {
+		var headerTd = sys.draggingStart;
+		var newWidth = headerTd.data("startWidth") + e.pageX - headerTd.data("startX");
+		resizeColumn(headerTd, newWidth)
+	} else {
+		var start = sys.draggingStart;
+		var div = start.children('div').eq(0);
+		var offset = e.pageY - start.data("startY");
+		var newHeight = start.data("startHeight") + offset;
+		div.height(0);
+		start.height(newHeight);
+		div.height(start.height());
+		div.prop('title', (div.height() < div.prop('scrollHeight')) ? start.text() : '');
 	}
 });
 
@@ -411,45 +421,42 @@ function addColumns(count, colNo) {
 }
 
 function updateNumbering(rowNo, colNo) {
-	if (isInteger(rowNo)) {
-		var rowCount = table.rows.length;
-		for (; rowNo < rowCount; rowNo++)
-			table.rows[rowNo].cells[1].children[0].innerHTML = rowNo - 1;
-	} else if (isInteger(colNo)) {
-		var headerCells = table.rows[1].cells;
-		var colCount = headerCells.length;
-		for (; colNo < colCount; colNo++)
-			headerCells[colNo].children[0].innerHTML = colNo - 1;
+	// horizontal headers and sections
+	for (var rowNo = 2; rowNo < table.rows.length; rowNo++)
+		table.rows[rowNo].cells[1].children[0].textContent = rowNo - 1;
 
-		var sectionCells = table.rows[0].cells;
-		var colCount = sectionCells.length;
-		var sectionId = undefined;
-		var sectionSpan = 0;
-		for (var colNo = colCount - 1; colNo >= 1; colNo--) {
-			var cell = sectionCells[colNo];
-			var prevCell = sectionCells[colNo + 1];
-			cell.id = null;
-			var _sectionId = cell.textContent;
+	// vertical headers and sections
+	var sectionCells = table.rows[0].cells;
+	var colCount = sectionCells.length;
+	var sectionId = undefined;
+	var sectionSpan = 0;
+	for (var colNo = colCount - 1; colNo >= 1; colNo--) {
+		if (colNo > 1)
+			table.rows[1].cells[colNo].children[0].textContent = colNo - 1;
+
+		var cell = sectionCells[colNo];
+		var prevCell = sectionCells[colNo + 1];
+		cell.id = null;
+		var _sectionId = cell.textContent;
+		if (_sectionId)
+			cell.classList.add('merged-cell');
+		cell.classList.remove('vert-section');
+		if (sectionId === _sectionId) {
 			if (_sectionId)
-				cell.classList.add('merged-cell');
-			cell.classList.remove('vert-section');
-			if (sectionId === _sectionId) {
-				if (_sectionId)
-					sectionSpan++;
-			} else {
-				if (sectionId) {
-					prevCell.classList.remove('merged-cell');
-					prevCell.classList.add('vert-section');
-					prevCell.id = sectionId;
-					prevCell.colSpan = sectionSpan;
-				}
-				sectionSpan = 0;
-				if (_sectionId)
-					sectionSpan++;
-				sectionId = _sectionId;
+				sectionSpan++;
+		} else {
+			if (sectionId) {
+				prevCell.classList.remove('merged-cell');
+				prevCell.classList.add('vert-section');
+				prevCell.id = sectionId;
+				prevCell.colSpan = sectionSpan;
+				resizeColumn($(prevCell), '');
 			}
-		};
-
+			sectionSpan = 0;
+			if (_sectionId)
+				sectionSpan++;
+			sectionId = _sectionId;
+		}
 	}
 }
 
@@ -475,7 +482,6 @@ function removeColumns(colNo, count) {
 		sectionTd.attr('colSpan', 1);
 		for (var rowNo = 0; rowNo < table.rows.length; rowNo++)
 			table.rows[rowNo].deleteCell(colNo);
-		resizeColumn($(sectionTd), '');
 	}
 	updateNumbering(null, colNo);
 }
