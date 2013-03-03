@@ -49,8 +49,11 @@ td.col-header {
 	border-right: 1px solid #666666;
 	border-bottom: 1px solid #666666;
 	border-top: 1px solid #666666;
-	width: 50px;
 	vertical-align: middle;
+}
+td.col-header div {
+	width: 50px;
+	overflow: hidden;
 }
 td.row-header {
 	color: #808080;
@@ -61,7 +64,7 @@ td.row-header {
 	text-align: right;
 	height: 20px;
 }
-td.row-header div, td.col-header div, td.row-section div {
+td.row-header div, td.row-section div {
 	overflow: hidden;
 }
 td.row-section {

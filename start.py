@@ -5,8 +5,8 @@ import os
 import sys
 
 
-cur_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(cur_dir)
+base_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(base_dir)
 
 
 python_required_version = '3.2'  # tested with this version
@@ -17,6 +17,8 @@ if sys.version < python_required_version:
 
 from PyQt4 import QtGui, QtCore, QtWebKit, uic
 
+
+TEMPLATE_HEADER = 'htmlreporttemplate'
 
 class WebPage(QtWebKit.QWebPage):
     """
@@ -82,22 +84,57 @@ class MainWindow(QtGui.QMainWindow, FormClass):
         # and replace it with our widget
         self.placeholder_layout.addWidget(self.web_view)
 
-        spreadsheet_menu = self.menuBar().addMenu('Spreadsheet')
-        addActionsToMenu(spreadsheet_menu, [
-            createAction(spreadsheet_menu, 'New', self.spreadsheet_new),
-            createAction(spreadsheet_menu, 'Print', self.spreadsheet_print)
+        template_menu = self.menuBar().addMenu('Template')
+        addActionsToMenu(template_menu, [
+            createAction(template_menu, 'New', self.template_new, 'Ctrl+N'),
+            createAction(template_menu, 'Open', self.template_open, 'Ctrl+O'),
+            createAction(template_menu, 'Save', self.template_save, 'Ctrl+S'),
+            createAction(template_menu, 'Quit', self.close, 'Ctrl+Q'),
+#            createAction(template_menu, 'Print', self.spreadsheet_print)
         ])
 
     def print_to_console(self, msg):
         self.messages.appendPlainText(msg)
         self.messages.ensureCursorVisible()  # scroll to the new message
 
-    def spreadsheet_new(self):
-        self.print_to_console('New spreadsheet')
-        self.web_view.page().mainFrame().evaluateJavaScript("""
-if (confirm("Really close without saving changes ?"))
-    load(sys.initData);
-""")
+    def template_new(self):
+        self.print_to_console('New template')
+        main_window.web_view.load(QtCore.QUrl('template.html'))  # load existing page
+#        self.web_view.page().mainFrame().evaluateJavaScript("""
+#if (confirm("Really close without saving changes ?"))
+#    load(sys.initData);
+#""")
+    def template_open(self):
+        file_path = QtGui.QFileDialog.getOpenFileName(
+            self, 'Load template', base_dir, 'Templates *.htmltt(*.htmltt)'
+        )
+        if not file_path:
+            return
+        with open(file_path) as _file:
+            first_line = _file.readline()
+            if first_line.strip() != TEMPLATE_HEADER:
+                return self.showWarning('Bad file format', 'Bad template header')
+            table_html = _file.read()
+#        main_window.web_view.load(QtCore.QUrl('template.html'))  # load existing page
+#        def load():
+#            table_element = self.web_view.page().mainFrame().findFirstElement("#table")
+#            table_element.setInnerXml(table_html)
+#        main_window.web_view.loadFinished.connect(load)
+        table_element = self.web_view.page().mainFrame().findFirstElement("#table")
+        table_element.setInnerXml(table_html)
+
+    def template_save(self):
+        table_element = self.web_view.page().mainFrame().findFirstElement("#table")
+#        a = self.web_view.page().mainFrame().evaluateJavaScript('document.getElementById("table").innerHTML')
+#        self.print_to_console(table_element.toInnerXml())
+        file_path = QtGui.QFileDialog.getSaveFileName(self,
+                'Save template', base_dir, 'Templates *.htmltt(*.htmltt)')
+        if not file_path:
+            return
+        with open(file_path, 'w') as _file:
+            _file.write(TEMPLATE_HEADER + '\n')
+            _file.write(table_element.toInnerXml())
+        self.print_to_console('Saved')
 
     def spreadsheet_print(self):
         self.showInformation('Print', 'Print spreadsheet')
@@ -143,6 +180,19 @@ def addActionsToMenu(menu, items):
             menu.addMenu(item)
         else:
             menu.addSeparator()
+
+
+
+class HtmlReport():
+    
+    def __init__(self, template_path):
+        pass
+
+    def render_section(self, section_id):
+        pass
+
+    def to_html(self):
+        pass
 
 
 if __name__ == '__main__':

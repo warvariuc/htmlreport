@@ -291,7 +291,9 @@ function resizeColumn(headerTd, newWidth) {
 	headerDiv.width(0);
 	sectionDiv.width(0);
 	headerTd.width(newWidth);
-	headerDiv.width(headerTd.width());
+	// headerDiv.width(newWidth);
+	headerDiv.width(Math.max(newWidth, headerTd.width()));
+	// headerDiv.width(headerTd.width());
 	// headerTd.prop('title', (headerDiv.width() < headerDiv.prop('scrollWidth')) ? headerDiv.text() : '');
 	sectionDiv.width(sectionTd.width());
 	// sectionTd.prop('title', (sectionDiv.width() < sectionDiv.prop('scrollWidth')) ? sectionDiv.text() : '');
