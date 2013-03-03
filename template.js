@@ -220,6 +220,7 @@ $.contextMenu({
 			for (var c = sys.c1; c <= sys.c2; c++) {
 				if (table.rows[r].cells[c].classList.contains('merged-cell'))
 					selectionHasMergedCells = true;
+				// ensure that you cannot merge cells from different sections
 				vertSelectionSections[table.rows[0].cells[c].textContent] = 1;
 				horizSelectionSections[table.rows[r].cells[0].textContent] = 1;
 			}
@@ -265,6 +266,10 @@ $(document).on("mousedown", "#table > tbody > tr > td.col-header, #table > tbody
 	sys.draggingStart.data("startHeight", $(this).height());
 });
 
+$(document).on("mouseup", function() {
+	sys.draggingStart = null;
+});
+
 $(document).on("mousemove", function(e) {
 	if (!sys.draggingStart)
 		return;
@@ -273,19 +278,10 @@ $(document).on("mousemove", function(e) {
 		var newWidth = headerTd.data("startWidth") + e.pageX - headerTd.data("startX");
 		resizeColumn(headerTd, newWidth)
 	} else {
-		var start = sys.draggingStart;
-		var div = start.children('div').eq(0);
-		var offset = e.pageY - start.data("startY");
-		var newHeight = start.data("startHeight") + offset;
-		div.height(0);
-		start.height(newHeight);
-		div.height(start.height());
-		div.prop('title', (div.height() < div.prop('scrollHeight')) ? start.text() : '');
+		var headerTd = sys.draggingStart;
+		var newHeight = headerTd.data("startHeight") + e.pageY - headerTd.data("startY");
+		resizeRow(headerTd, newHeight);
 	}
-});
-
-$(document).on("mouseup", function() {
-	sys.draggingStart = null;
 });
 
 function resizeColumn(headerTd, newWidth) {
@@ -299,6 +295,18 @@ function resizeColumn(headerTd, newWidth) {
 	// headerTd.prop('title', (headerDiv.width() < headerDiv.prop('scrollWidth')) ? headerDiv.text() : '');
 	sectionDiv.width(sectionTd.width());
 	// sectionTd.prop('title', (sectionDiv.width() < sectionDiv.prop('scrollWidth')) ? sectionDiv.text() : '');
+}
+
+function resizeRow(headerTd, newHeight) {
+	var headerDiv = headerTd.children('div').eq(0);
+	var sectionTd = $('#' + table.rows[headerTd[0].parentNode.rowIndex].cells[0].textContent);
+	var sectionDiv = sectionTd.children('div');
+	headerDiv.height(0);
+	sectionDiv.height(0);
+	headerTd.height(newHeight);
+	headerDiv.height(headerTd.height());
+	// div.prop('title', (div.height() < div.prop('scrollHeight')) ? headerTd.text() : '');
+	sectionDiv.height(sectionTd.height());
 }
 
 function formatSelection() {
@@ -390,6 +398,11 @@ function addRows(count, rowNo) {
 		var row = table.insertRow(rowNo);
 		var td = row.insertCell(-1);
 		td.outerHTML = newRowSection;
+
+		var prevRow = table.rows[rowNo + 1];
+		if (prevRow)
+			table.rows[rowNo].cells[0].innerHTML = prevRow.cells[0].innerHTML;
+
 		td = row.insertCell(-1);
 		td.outerHTML = newRowHeader;
 		for (var colNo = 0; colNo < colCount - 2; colNo++) {
@@ -411,6 +424,7 @@ function addColumns(count, colNo) {
 				td.outerHTML = newColSection;
 				var prevCell = row.cells[colNo + 1];
 				if (prevCell)
+					// copy section id from the shifted column
 					row.cells[colNo].innerHTML = prevCell.innerHTML;
 			} else if (rowNo == 1)
 				td.outerHTML = newColHeader;
@@ -422,8 +436,37 @@ function addColumns(count, colNo) {
 
 function updateNumbering(rowNo, colNo) {
 	// horizontal headers and sections
-	for (var rowNo = 2; rowNo < table.rows.length; rowNo++)
-		table.rows[rowNo].cells[1].children[0].textContent = rowNo - 1;
+	for (var rowNo = table.rows.length - 1; rowNo >= 1; rowNo--) {
+		if (rowNo >= 2)
+			// set header row number
+			table.rows[rowNo].cells[1].children[0].textContent = rowNo - 1;
+
+		var cell = table.rows[rowNo].cells[0];
+		var prevCell = table.rows[rowNo + 1];
+		if (prevCell)
+			prevCell = prevCell.cells[0];
+		cell.id = null;
+		cell.classList.remove('vert-section');
+		var _sectionId = cell.textContent;
+		if (_sectionId)
+			cell.classList.add('merged-cell');
+		if (sectionId === _sectionId) {
+			if (_sectionId)
+				sectionSpan++;
+		} else {
+			if (sectionId) {
+				prevCell.classList.remove('merged-cell');
+				prevCell.classList.add('vert-section');
+				prevCell.id = sectionId;
+				prevCell.rowSpan = sectionSpan;
+				// resizeColumn($(prevCell), '');
+			}
+			sectionSpan = 0;
+			if (_sectionId)
+				sectionSpan++;
+			sectionId = _sectionId;
+		}
+	}
 
 	// vertical headers and sections
 	var sectionCells = table.rows[0].cells;
@@ -431,16 +474,17 @@ function updateNumbering(rowNo, colNo) {
 	var sectionId = undefined;
 	var sectionSpan = 0;
 	for (var colNo = colCount - 1; colNo >= 1; colNo--) {
-		if (colNo > 1)
+		if (colNo >= 2)
+			// set header column number
 			table.rows[1].cells[colNo].children[0].textContent = colNo - 1;
 
 		var cell = sectionCells[colNo];
 		var prevCell = sectionCells[colNo + 1];
 		cell.id = null;
+		cell.classList.remove('vert-section');
 		var _sectionId = cell.textContent;
 		if (_sectionId)
 			cell.classList.add('merged-cell');
-		cell.classList.remove('vert-section');
 		if (sectionId === _sectionId) {
 			if (_sectionId)
 				sectionSpan++;
