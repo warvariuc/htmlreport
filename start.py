@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 __author__ = "Victor Varvariuc <victor.varvariuc@gmail.com>"
 
-import os
 import sys
-
-
-base_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(base_dir)
 
 
 python_required_version = '3.2'  # tested with this version
@@ -15,10 +10,15 @@ if sys.version < python_required_version:
                      % (python_required_version, sys.version.split(' ')[0]))
 
 
+import os
+
 from PyQt4 import QtGui, QtCore, QtWebKit, uic
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(BASE_DIR)
 TEMPLATE_HEADER = 'htmlreporttemplate'
+
 
 class WebPage(QtWebKit.QWebPage):
     """
@@ -104,9 +104,10 @@ class MainWindow(QtGui.QMainWindow, FormClass):
 #if (confirm("Really close without saving changes ?"))
 #    load(sys.initData);
 #""")
+
     def template_open(self):
         file_path = QtGui.QFileDialog.getOpenFileName(
-            self, 'Load template', base_dir, 'Templates *.htmltt(*.htmltt)'
+            self, 'Load template', BASE_DIR, 'Templates *.htmltt(*.htmltt)'
         )
         if not file_path:
             return
@@ -128,7 +129,7 @@ class MainWindow(QtGui.QMainWindow, FormClass):
 #        a = self.web_view.page().mainFrame().evaluateJavaScript('document.getElementById("table").innerHTML')
 #        self.print_to_console(table_element.toInnerXml())
         file_path = QtGui.QFileDialog.getSaveFileName(self,
-                'Save template', base_dir, 'Templates *.htmltt(*.htmltt)')
+                'Save template', BASE_DIR, 'Templates *.htmltt(*.htmltt)')
         if not file_path:
             return
         with open(file_path, 'w') as _file:
@@ -182,14 +183,24 @@ def addActionsToMenu(menu, items):
             menu.addSeparator()
 
 
-
 class HtmlReport():
-    
-    def __init__(self, template_path):
-        pass
 
-    def render_section(self, section_id):
-        pass
+    def __init__(self, template_path):
+        self.template_web_page = QtWebKit.QWebPage()
+        self.template_web_page.mainFrame().load(QtCore.QUrl(template_path))
+        self.table_element = self.template_web_page.mainFrame().findFirstElement("#table")
+
+    def render_section(self, section_id, context=None, attach=None):
+        """
+        @param section_id: str - id of a vertical or horizontal section, can
+            contain two ids like "horiz_section_id|verti_section_id"
+        @param context: dict  - with variable names and values
+        @param attach: bool - whether to attach the section to the right of the
+            previously rendered section, instead of rendering the section as
+            new row(s). If not given for horizontal sections it's True. For
+            vertical and horizontal/vertical sections intersections it's False.
+        """
+        context = context or {}
 
     def to_html(self):
         pass
