@@ -15,6 +15,7 @@ import os
 from PyQt4 import QtGui, QtCore, QtWebKit, uic
 
 
+QtCore.pyqtRemoveInputHook()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(BASE_DIR)
 TEMPLATE_HEADER = 'htmlreporttemplate'
@@ -89,6 +90,7 @@ class MainWindow(QtGui.QMainWindow, FormClass):
             createAction(template_menu, 'New', self.template_new, 'Ctrl+N'),
             createAction(template_menu, 'Open', self.template_open, 'Ctrl+O'),
             createAction(template_menu, 'Save', self.template_save, 'Ctrl+S'),
+            createAction(template_menu, 'Demo report', self.demo_report),
             createAction(template_menu, 'Quit', self.close, 'Ctrl+Q'),
 #            createAction(template_menu, 'Print', self.spreadsheet_print)
         ])
@@ -153,6 +155,15 @@ class MainWindow(QtGui.QMainWindow, FormClass):
 #        # show link URL in the status bar when cursor is over it
 #        self.statusBar().showMessage(url)
 
+    def demo_report(self):
+        html_report = HtmlReport('demo.htmltt')
+        html_report.render_section('shapka')
+        for _ in range(20):
+            html_report.render_section('stroka')
+        html_report.render_section('podval')
+
+        self.web_view.setPage(html_report.to_html())
+
 
 def createAction(parent, text, slot=None, shortcut=None, icon=None, tip=None, checkable=False,
                  signal='triggered'):
@@ -186,9 +197,17 @@ def addActionsToMenu(menu, items):
 class HtmlReport():
 
     def __init__(self, template_path):
+        with open(template_path) as _file:
+            first_line = _file.readline()
+            if first_line.strip() != TEMPLATE_HEADER:
+                raise Exception('Bad template header')
+            table_html = _file.read()
+
         self.template_web_page = QtWebKit.QWebPage()
         self.template_web_page.mainFrame().load(QtCore.QUrl(template_path))
         self.table_element = self.template_web_page.mainFrame().findFirstElement("#table")
+        import ipdb; from pprint import pprint; ipdb.set_trace()
+        self.table_element.setInnerXml(table_html)
 
     def render_section(self, section_id, context=None, attach=None):
         """
@@ -203,7 +222,8 @@ class HtmlReport():
         context = context or {}
 
     def to_html(self):
-        pass
+        return self.template_web_page
+        return QtWebKit.QWebPage()
 
 
 if __name__ == '__main__':
