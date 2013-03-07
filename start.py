@@ -25,13 +25,18 @@ class WebPage(QtWebKit.QWebPage):
     """
     Makes it possible to use a Python logger to print javascript console messages
     """
-    def __init__(self, parent, print_message_func):
+    def __init__(self, parent, print_message_func=None, url=None):
         super().__init__(parent)
         self.print_message = print_message_func
+        if url:
+            assert isinstance(url, QtCore.QUrl)
+            self.mainFrame().load(url)
 
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID):
-        msg = "JsConsole(%s:%d): %s" % (sourceID, lineNumber, msg)
-        self.print_message(msg)
+        if self.print_message:
+            msg = "JsConsole(%s:%d): %s" % (sourceID, lineNumber, msg)
+            return self.print_message(msg)
+        super().javaScriptConsoleMessage(msg, lineNumber, sourceID)
 
 
 class WebView(QtWebKit.QWebView):
@@ -40,8 +45,6 @@ class WebView(QtWebKit.QWebView):
         super().__init__(parent)
         assert isinstance(web_page, QtWebKit.QWebPage)
         self.setPage(web_page)
-        self.settings().setAttribute(QtWebKit.QWebSettings.JavascriptEnabled, True)
-#        self.settings().setAttribute(QtWebKit.QWebSettings.JavascriptCanOpenWindows, True)
         self.linkClicked.connect(self.on_link_clicked)
         self.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -90,7 +93,7 @@ class MainWindow(QtGui.QMainWindow, FormClass):
             createAction(template_menu, 'New', self.template_new, 'Ctrl+N'),
             createAction(template_menu, 'Open', self.template_open, 'Ctrl+O'),
             createAction(template_menu, 'Save', self.template_save, 'Ctrl+S'),
-            createAction(template_menu, 'Demo report', self.demo_report),
+            createAction(template_menu, 'Demo report', self.demo_report, 'Ctrl+D'),
             createAction(template_menu, 'Quit', self.close, 'Ctrl+Q'),
 #            createAction(template_menu, 'Print', self.spreadsheet_print)
         ])
@@ -204,10 +207,12 @@ class HtmlReport():
             table_html = _file.read()
 
         self.template_web_page = QtWebKit.QWebPage()
-        self.template_web_page.mainFrame().load(QtCore.QUrl(template_path))
-        self.table_element = self.template_web_page.mainFrame().findFirstElement("#table")
-        import ipdb; from pprint import pprint; ipdb.set_trace()
-        self.table_element.setInnerXml(table_html)
+        self.template_web_page.mainFrame().load(QtCore.QUrl('template.html'))
+        def load(ok):
+            self.table_element = self.template_web_page.mainFrame().findFirstElement("#table")
+            self.table_element.setInnerXml(table_html)
+            main_window.web_view.loadFinished.disconnect(load)
+        main_window.web_view.loadFinished.connect(load)
 
     def render_section(self, section_id, context=None, attach=None):
         """
@@ -228,6 +233,9 @@ class HtmlReport():
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
+    QtWebKit.QWebSettings.globalSettings().setAttribute(
+        QtWebKit.QWebSettings.JavascriptCanOpenWindows, True
+    )
     main_window = MainWindow()
     main_window.show()
     main_window.web_view.load(QtCore.QUrl('template.html'))  # load existing page
