@@ -209,9 +209,9 @@ class HtmlReport():
         self.template_web_page = QtWebKit.QWebPage()
         self.template_web_page.mainFrame().load(QtCore.QUrl('template.html'))
         def load(ok):
+            main_window.web_view.loadFinished.disconnect(load)
             self.table_element = self.template_web_page.mainFrame().findFirstElement("#table")
             self.table_element.setInnerXml(table_html)
-            main_window.web_view.loadFinished.disconnect(load)
         main_window.web_view.loadFinished.connect(load)
 
     def render_section(self, section_id, context=None, attach=None):

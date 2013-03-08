@@ -288,27 +288,36 @@ function resizeColumn(headerTd, newWidth) {
 	var headerDiv = headerTd.children('div');
 	var sectionTd = $('#' + table.rows[0].cells[headerTd[0].cellIndex].textContent);
 	var sectionDiv = sectionTd.children('div');
-	headerDiv.width(0);
-	sectionDiv.width(0);
+	sectionDiv.hide();
+	headerDiv.hide();
+	// sectionDiv.width(0);
+	// headerDiv.width(0);
+	// headerTd[0].style.width = newWidth + 'px';
 	headerTd.width(newWidth);
+	// console.log(newWidth);
 	// headerDiv.width(newWidth);
-	headerDiv.width(Math.max(newWidth, headerTd.width()));
-	// headerDiv.width(headerTd.width());
+	// console.log(newWidth, headerDiv.width(), sectionDiv.width(), headerTd.prop('scrollWidth'));
+	// headerDiv.width(newWidth);
+	headerDiv.width(headerTd.width());
 	// headerTd.prop('title', (headerDiv.width() < headerDiv.prop('scrollWidth')) ? headerDiv.text() : '');
 	sectionDiv.width(sectionTd.width());
+	sectionDiv.show();
+	headerDiv.show();
 	// sectionTd.prop('title', (sectionDiv.width() < sectionDiv.prop('scrollWidth')) ? sectionDiv.text() : '');
 }
 
 function resizeRow(headerTd, newHeight) {
-	var headerDiv = headerTd.children('div').eq(0);
+	var headerDiv = headerTd.children('div');
 	var sectionTd = $('#' + table.rows[headerTd[0].parentNode.rowIndex].cells[0].textContent);
 	var sectionDiv = sectionTd.children('div');
-	headerDiv.height(0);
-	sectionDiv.height(0);
+	headerDiv.hide();
+	sectionDiv.hide();
 	headerTd.height(newHeight);
 	headerDiv.height(headerTd.height());
 	// div.prop('title', (div.height() < div.prop('scrollHeight')) ? headerTd.text() : '');
 	sectionDiv.height(sectionTd.height());
+	headerDiv.show();
+	sectionDiv.show();
 }
 
 function formatSelection() {
@@ -524,7 +533,7 @@ function removeColumns(colNo, count) {
 	count = count || 1;
 	for (var i = 0; i < count; i++) {
 		var sectionTd = $('#' + table.rows[0].cells[colNo].textContent);
-		sectionTd.children('div').width(0);
+		sectionTd.children('div').hide();
 		sectionTd.attr('colSpan', 1);
 		for (var rowNo = 0; rowNo < table.rows.length; rowNo++)
 			table.rows[rowNo].deleteCell(colNo);
@@ -664,6 +673,11 @@ $.contextMenu({
 					editSection(sys.c1, sys.c2 - sys.c1 + 1, 1)
 				},
 			};
+		items['clear_contents'] = {
+			'name' : "Clear contents",
+			'callback' : clearSelectionContents,
+			'icon' : 'clear_cell_contents',
+		};
 		return {
 			'items' : items,
 		}
@@ -726,6 +740,11 @@ $.contextMenu({
 					editSection(sys.r1, sys.r2 - sys.r1 + 1, 0)
 				},
 			};
+		items['clear_contents'] = {
+			'name' : "Clear contents",
+			'callback' : clearSelectionContents,
+			'icon' : 'clear_cell_contents',
+		};
 		return {
 			'items' : items,
 		}
