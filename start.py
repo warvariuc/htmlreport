@@ -197,7 +197,7 @@ def addActionsToMenu(menu, items):
             menu.addSeparator()
 
 
-class HtmlReport():
+class HtmlReport(QtCore.QObject):
 
     def __init__(self, template_path):
         with open(template_path) as _file:
@@ -207,12 +207,18 @@ class HtmlReport():
             table_html = _file.read()
 
         self.template_web_page = QtWebKit.QWebPage()
-        self.template_web_page.mainFrame().load(QtCore.QUrl('template.html'))
+        self.template_web_frame = self.template_web_page.mainFrame()
+        self.template_web_frame.load(QtCore.QUrl('template.html'))
+        self.table_element = None
         def load(ok):
-            main_window.web_view.loadFinished.disconnect(load)
-            self.table_element = self.template_web_page.mainFrame().findFirstElement("#table")
-            self.table_element.setInnerXml(table_html)
-        main_window.web_view.loadFinished.connect(load)
+            if not ok:
+                raise Exception('Failed to load template.')
+            self.template_web_frame.loadFinished.disconnect(load)
+            self.table_element = self.template_web_frame.findFirstElement("#table")
+        self.template_web_frame.loadFinished.connect(load)
+        while not self.table_element:
+            QtGui.QApplication.processEvents()
+        self.table_element.setInnerXml(table_html)
 
     def render_section(self, section_id, context=None, attach=None):
         """
@@ -225,6 +231,14 @@ class HtmlReport():
             vertical and horizontal/vertical sections intersections it's False.
         """
         context = context or {}
+        section_td = self.table_element.findFirst('#' + section_id)
+        if section_td.isNull():
+            raise Exception('Unknown section: %s' % section_id)
+        if section_td.hasClass('horiz-section'):
+            span = section_td.attribute('rowSpan')
+            print(span)
+        elif section_td.hasClass('vert-section'):
+            span = section_td.attribute('colSpan')
 
     def to_html(self):
         return self.template_web_page
