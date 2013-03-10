@@ -26,16 +26,17 @@ $(function() {
 	// $(document).on("keydown", keypress);
 	// $(".ui-dialog-content").css("padding", 0);
 	// disable selection on the page
-	addColumns(10);
-	addRows(10);
-	for (var r = 2; r < table.rows.length; r++) {
-		var row = table.rows[r];
-		for (var c = 2; c < row.cells.length; c++) {
-			var cell = row.cells[c];
-			cell.innerHTML = sprintf('%d x %d', r - 1, c - 1);
+	if (table.rows.length == 3 && table.rows[0].cells.length == 3) {
+		addColumns(10);
+		addRows(10);
+		for (var r = 2; r < table.rows.length; r++) {
+			var row = table.rows[r];
+			for (var c = 2; c < row.cells.length; c++) {
+				var cell = row.cells[c];
+				cell.innerHTML = sprintf('%d x %d', r - 1, c - 1);
+			}
 		}
 	}
-
 });
 
 $(document).on("selectstart", false);
@@ -202,6 +203,7 @@ function clearSelectionContents() {
 	for (var r = sys.r1; r <= sys.r2; r++) {
 		for (var c = sys.c1; c <= sys.c2; c++) {
 			var cell = table.rows[r].cells[c];
+			// clear only visible cells
 			if (!cell.classList.contains('merged-cell'))
 				cell.innerHTML = '';
 		}
@@ -262,8 +264,8 @@ $(document).on("mousedown", "#table > tbody > tr > td.col-header, #table > tbody
 	sys.draggingStart = $(this);
 	sys.draggingStart.data("startX", e.pageX);
 	sys.draggingStart.data("startY", e.pageY);
-	sys.draggingStart.data("startWidth", $(this).width());
-	sys.draggingStart.data("startHeight", $(this).height());
+	sys.draggingStart.data("startWidth", sys.draggingStart.width());
+	sys.draggingStart.data("startHeight", sys.draggingStart.height());
 });
 
 $(document).on("mouseup", function() {
@@ -284,40 +286,30 @@ $(document).on("mousemove", function(e) {
 	}
 });
 
-function resizeColumn(headerTd, newWidth) {
-	var headerDiv = headerTd.children('div');
-	var sectionTd = $('#' + table.rows[0].cells[headerTd[0].cellIndex].textContent);
-	var sectionDiv = sectionTd.children('div');
-	sectionDiv.hide();
-	headerDiv.hide();
-	// sectionDiv.width(0);
-	// headerDiv.width(0);
-	// headerTd[0].style.width = newWidth + 'px';
-	headerTd.width(newWidth);
-	// console.log(newWidth);
-	// headerDiv.width(newWidth);
-	// console.log(newWidth, headerDiv.width(), sectionDiv.width(), headerTd.prop('scrollWidth'));
-	// headerDiv.width(newWidth);
-	headerDiv.width(headerTd.width());
-	// headerTd.prop('title', (headerDiv.width() < headerDiv.prop('scrollWidth')) ? headerDiv.text() : '');
-	sectionDiv.width(sectionTd.width());
-	sectionDiv.show();
-	headerDiv.show();
-	// sectionTd.prop('title', (sectionDiv.width() < sectionDiv.prop('scrollWidth')) ? sectionDiv.text() : '');
+function resizeColumn($headerTd, newWidth) {
+	var $headerDiv = $headerTd.children('div');
+	var $sectionTd = $('#' + table.rows[0].cells[$headerTd[0].cellIndex].textContent);
+	var $sectionDiv = $sectionTd.children('div');
+	$sectionDiv.hide();
+	$headerDiv.hide();
+	$headerTd.width(newWidth);
+	$headerDiv.width($headerTd.width());
+	$sectionDiv.width($sectionTd.width());
+	$sectionDiv.show();
+	$headerDiv.show();
 }
 
-function resizeRow(headerTd, newHeight) {
-	var headerDiv = headerTd.children('div');
-	var sectionTd = $('#' + table.rows[headerTd[0].parentNode.rowIndex].cells[0].textContent);
-	var sectionDiv = sectionTd.children('div');
-	headerDiv.hide();
-	sectionDiv.hide();
-	headerTd.height(newHeight);
-	headerDiv.height(headerTd.height());
-	// div.prop('title', (div.height() < div.prop('scrollHeight')) ? headerTd.text() : '');
-	sectionDiv.height(sectionTd.height());
-	headerDiv.show();
-	sectionDiv.show();
+function resizeRow($headerTd, newHeight) {
+	var $headerDiv = $headerTd.children('div');
+	var $sectionTd = $('#' + table.rows[$headerTd[0].parentNode.rowIndex].cells[0].textContent);
+	var $sectionDiv = $sectionTd.children('div');
+	$headerDiv.hide();
+	$sectionDiv.hide();
+	$headerTd.height(newHeight);
+	$headerDiv.height($headerTd.height());
+	$sectionDiv.height($sectionTd.height());
+	$headerDiv.show();
+	$sectionDiv.show();
 }
 
 function formatSelection() {
@@ -532,9 +524,9 @@ function removeColumns(colNo, count) {
 	colNo += 2;
 	count = count || 1;
 	for (var i = 0; i < count; i++) {
-		var sectionTd = $('#' + table.rows[0].cells[colNo].textContent);
-		sectionTd.children('div').hide();
-		sectionTd.attr('colSpan', 1);
+		var $sectionTd = $('#' + table.rows[0].cells[colNo].textContent);
+		$sectionTd.children('div').hide();
+		$sectionTd.attr('colSpan', 1);
 		for (var rowNo = 0; rowNo < table.rows.length; rowNo++)
 			table.rows[rowNo].deleteCell(colNo);
 	}

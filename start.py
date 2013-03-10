@@ -11,6 +11,7 @@ if sys.version < python_required_version:
 
 
 import os
+import time
 
 from PyQt4 import QtGui, QtCore, QtWebKit, uic
 
@@ -106,9 +107,9 @@ class MainWindow(QtGui.QMainWindow, FormClass):
         self.print_to_console('New template')
         main_window.web_view.load(QtCore.QUrl('template.html'))  # load existing page
 #        self.web_view.page().mainFrame().evaluateJavaScript("""
-#if (confirm("Really close without saving changes ?"))
+# if (confirm("Really close without saving changes ?"))
 #    load(sys.initData);
-#""")
+# """)
 
     def template_open(self):
         file_path = QtGui.QFileDialog.getOpenFileName(
@@ -161,7 +162,7 @@ class MainWindow(QtGui.QMainWindow, FormClass):
     def demo_report(self):
         html_report = HtmlReport('demo.htmltt')
         html_report.render_section('shapka')
-        for _ in range(20):
+        for _ in range(200):
             html_report.render_section('stroka')
         html_report.render_section('podval')
 
@@ -200,6 +201,7 @@ def addActionsToMenu(menu, items):
 class HtmlReport(QtCore.QObject):
 
     def __init__(self, template_path):
+        super().__init__()
         with open(template_path) as _file:
             first_line = _file.readline()
             if first_line.strip() != TEMPLATE_HEADER:
@@ -209,16 +211,20 @@ class HtmlReport(QtCore.QObject):
         self.template_web_page = QtWebKit.QWebPage()
         self.template_web_frame = self.template_web_page.mainFrame()
         self.template_web_frame.load(QtCore.QUrl('template.html'))
-        self.table_element = None
+        self.table = None
         def load(ok):
             if not ok:
                 raise Exception('Failed to load template.')
             self.template_web_frame.loadFinished.disconnect(load)
-            self.table_element = self.template_web_frame.findFirstElement("#table")
+            self.table = self.template_web_frame.findFirstElement("#table")
         self.template_web_frame.loadFinished.connect(load)
-        while not self.table_element:
+        while not self.table:
+            time.sleep(0.1)
             QtGui.QApplication.processEvents()
-        self.table_element.setInnerXml(table_html)
+        self.table.setInnerXml(table_html)
+        self.row_count = int(self.table.evaluateJavaScript('this.rows.length'))
+        self.col_count = int(self.table.evaluateJavaScript('this.rows[0].cells.length'))
+        self.output = []
 
     def render_section(self, section_id, context=None, attach=None):
         """
@@ -231,18 +237,53 @@ class HtmlReport(QtCore.QObject):
             vertical and horizontal/vertical sections intersections it's False.
         """
         context = context or {}
-        section_td = self.table_element.findFirst('#' + section_id)
+        section_td = self.table.findFirst('#' + section_id)
         if section_td.isNull():
             raise Exception('Unknown section: %s' % section_id)
         if section_td.hasClass('horiz-section'):
-            span = section_td.attribute('rowSpan')
-            print(span)
+            r1 = int(section_td.evaluateJavaScript('this.parentNode.rowIndex'))
+            c1 = 2
+            r2 = r1 + int(section_td.evaluateJavaScript('this.rowSpan'))
+            c2 = self.col_count
         elif section_td.hasClass('vert-section'):
-            span = section_td.attribute('colSpan')
+            r1 = 2
+            c1 = int(section_td.evaluateJavaScript('this.cellIndex'))
+            r2 = self.row_count
+            c2 = c1 + int(section_td.evaluateJavaScript('this.colSpan'))
+        else:
+            raise Exception('A non-section identifier')
+
+        for r in range(r1, r2):
+            row = []
+            for c in range(c1, c2):
+                content = self.table.evaluateJavaScript("""
+                    var $cell = $(this.rows[%d].cells[%d]);
+                    if ($cell.hasClass("merged-cell"))
+                        '';
+                    else {
+                        var $cloned = $cell.clone();
+                        $cloned.removeClass(); // remove all classed;
+                        $cloned.width($cell.width());
+                        $cloned.height($cell.height());
+                        $cloned[0].outerHTML
+                    }
+                    """ % (r, c))
+                if content:
+#                    print(content)
+                    row.append(content.format(**context))
+            self.output.append(row)
+
 
     def to_html(self):
+        table_html = ''
+        for row in self.output:
+            table_html += '<tr>'
+            for content in row:
+                table_html += content
+        self.table.setInnerXml(table_html)
+        with open('out.html', 'w') as ff:
+            ff.write(self.template_web_page.mainFrame().toHtml())
         return self.template_web_page
-        return QtWebKit.QWebPage()
 
 
 if __name__ == '__main__':
